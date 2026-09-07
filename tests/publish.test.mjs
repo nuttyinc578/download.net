@@ -10,14 +10,14 @@ test('publishing uploads the complete folder package and creates a single-manife
   const u=new URL(url);assert.ok(['api.github.com','uploads.github.com'].includes(u.hostname));assert.equal(options.headers.Authorization,`Bearer ${token}`);assert.equal(options.redirect,'error');
   const body=typeof options.body==='string'?JSON.parse(options.body):null;calls.push({path:u.pathname,method:options.method||'GET',body});let response;
   if(u.pathname==='/user')response={login:'tester'};
-  else if(u.pathname.endsWith('/forks'))response={fork:true,owner:{login:'tester'},parent:{full_name:'nuttyinc/download.net'},full_name:'tester/download.net',default_branch:'main'};
+  else if(u.pathname.endsWith('/forks'))response={fork:true,owner:{login:'tester'},parent:{full_name:'nuttyinc578/download.net'},full_name:'tester/download.net',default_branch:'main'};
   else if(u.pathname.endsWith('/git/ref/heads/main'))response={object:{sha:'a'.repeat(40)}};
   else if(u.pathname.endsWith('/git/refs'))response={ref:body.ref};
   else if(u.hostname==='uploads.github.com') {const chunks=[];for await(const b of options.body)chunks.push(b);const packagePath=join(dir,'uploaded.vfdn');await writeFile(packagePath,Buffer.concat(chunks));const inspected=await inspectPackage(packagePath);assert.equal(inspected.fileCount,2);assert.ok(inspected.manifest.files.some(f=>f.path==='assets/config.json'));assert.equal(u.searchParams.get('name'),'test-app.vfdn');response={browser_download_url:'https://github.com/tester/download.net/releases/download/app-v1/test-app.vfdn'};}
   else if(u.pathname.endsWith('/releases'))response={upload_url:'https://uploads.github.com/repos/tester/download.net/releases/1/assets{?name,label}',html_url:'https://github.com/tester/download.net/releases/tag/app-v1'};
   else if(u.pathname.includes('/contents/submissions/')){committed=JSON.parse(Buffer.from(body.content,'base64').toString());assert.ok(!JSON.stringify(body).includes(token));response={commit:{sha:'b'.repeat(40)}};}
-  else if(u.pathname==='/repos/nuttyinc/download.net')response={default_branch:'main'};
-  else if(u.pathname.endsWith('/pulls')){assert.match(body.head,/^tester:submission\/test-app-/);response={html_url:'https://github.com/nuttyinc/download.net/pull/1',number:1};}
+  else if(u.pathname==='/repos/nuttyinc578/download.net')response={default_branch:'main'};
+  else if(u.pathname.endsWith('/pulls')){assert.match(body.head,/^tester:submission\/test-app-/);response={html_url:'https://github.com/nuttyinc578/download.net/pull/1',number:1};}
   else throw Error('Unexpected request: '+u.pathname);
   return new Response(JSON.stringify(response),{status:200,headers:{'content-type':'application/json'}});
  };

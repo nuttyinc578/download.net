@@ -15,7 +15,7 @@ test('catalog keeps submissions pending and requires fresh approval after a list
  const run=()=>execFileSync(process.execPath,[resolve('scripts/catalog.mjs')],{cwd:root,encoding:'utf8',windowsHide:true});
  const catalog=async()=>JSON.parse(await readFile(join(root,'catalog/apps.json'),'utf8'));
  run();assert.deepEqual(await catalog(),[]);
- const review={decision:'approve',sha256:app.sha256,manifestSha256:createHash('sha256').update(JSON.stringify(app)).digest('hex'),reviewedBy:'maintainer',aiRunUrl:'https://github.com/nuttyinc/download.net/actions/runs/1',inspectionRunUrl:'https://github.com/nuttyinc/download.net/actions/runs/1'};
+ const review={decision:'approve',sha256:app.sha256,manifestSha256:createHash('sha256').update(JSON.stringify(app)).digest('hex'),reviewedBy:'maintainer',aiRunUrl:'https://github.com/nuttyinc578/download.net/actions/runs/1',inspectionRunUrl:'https://github.com/nuttyinc578/download.net/actions/runs/1'};
  await writeFile(join(root,'reviews/example-app-'+app.sha256+'.json'),JSON.stringify(review));
  run();assert.equal((await catalog())[0].description,'Reviewed description');
  await writeFile(submission,JSON.stringify({...app,description:'Unreviewed replacement'}));

@@ -14,7 +14,7 @@ Sign in to your Nuttyinc account in the launcher. Choose the complete built app 
 
 Your GitHub token
 
-Your token is used in memory to prepare your fork, create a public prerelease with the complete .vfdn folder package, and open a pull request in nuttyinc/download.net. It must permit fork creation, release asset uploads, content commits, and pull requests. Revoke it through GitHub settings if you no longer need it.
+Your token is used in memory to prepare your fork, create a public prerelease with the complete .vfdn folder package, and open a pull request in nuttyinc578/download.net. It must permit fork creation, release asset uploads, content commits, and pull requests. Revoke it through GitHub settings if you no longer need it.
 
 Review and distribution
 

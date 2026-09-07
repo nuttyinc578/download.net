@@ -47,7 +47,7 @@ async Task<List<AppManifest>> Catalog() {
         if (app.Environment.IsDevelopment() && !string.IsNullOrWhiteSpace(localCatalog)) {
             body = await File.ReadAllTextAsync(Path.GetFullPath(localCatalog));
         } else {
-        var url = Environment.GetEnvironmentVariable("CATALOG_URL") ?? "https://raw.githubusercontent.com/nuttyinc/download.net/main/catalog/apps.json";
+        var url = Environment.GetEnvironmentVariable("CATALOG_URL") ?? "https://raw.githubusercontent.com/nuttyinc578/download.net/main/catalog/apps.json";
         var parsed = new Uri(url);
         if (parsed.Scheme != "https" || parsed.Host != "raw.githubusercontent.com") throw new InvalidOperationException("CATALOG_URL must use raw.githubusercontent.com over HTTPS.");
         var client = app.Services.GetRequiredService<IHttpClientFactory>().CreateClient("catalog");

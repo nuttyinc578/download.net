@@ -39,7 +39,7 @@ A maintainer creates `reviews/APP_ID-SHA256.json` with `decision`, `sha256`, `ma
 Approval record example (replace every placeholder with verified values):
 
 ```json
-{"decision":"approve","sha256":"THE_REVIEWED_SHA256","manifestSha256":"THE_REVIEWED_MANIFEST_SHA256","reviewedBy":"MAINTAINER_LOGIN","aiRunUrl":"https://github.com/nuttyinc/download.net/actions/runs/RUN_ID","inspectionRunUrl":"https://github.com/nuttyinc/download.net/actions/runs/RUN_ID"}
+{"decision":"approve","sha256":"THE_REVIEWED_SHA256","manifestSha256":"THE_REVIEWED_MANIFEST_SHA256","reviewedBy":"MAINTAINER_LOGIN","aiRunUrl":"https://github.com/nuttyinc578/download.net/actions/runs/RUN_ID","inspectionRunUrl":"https://github.com/nuttyinc578/download.net/actions/runs/RUN_ID"}
 ```
 
 Protect `main` with required checks and code-owner reviews. Require review of `/catalog/`, `/reviews/`, `/.github/`, `/scripts/`, and `/shared/` using the provided CODEOWNERS file. Dismiss stale reviews and prevent direct pushes and bypasses. These GitHub administration settings cannot be enforced by repository files alone. Until configured, public submissions must not be accepted as approved listings.

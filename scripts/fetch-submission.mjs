@@ -3,7 +3,7 @@ import {writeFile} from 'node:fs/promises';
 import {validateManifest} from '../shared/manifest.mjs';
 const number=process.env.PR_NUMBER;
 if(!/^[1-9]\d*$/.test(number||''))throw Error('Invalid pull request number.');
-const root='https://api.github.com/repos/nuttyinc/download.net';
+const root='https://api.github.com/repos/nuttyinc578/download.net';
 async function get(url){const u=new URL(url);if(u.origin!=='https://api.github.com')throw Error('Invalid API host');const r=await fetch(u,{headers:{Authorization:`Bearer ${process.env.GH_TOKEN}`,Accept:'application/vnd.github+json'},redirect:'error',signal:AbortSignal.timeout(20000)});if(!r.ok)throw Error(`GitHub ${r.status}`);return r.json();}
 const pr=await get(`${root}/pulls/${number}`);
 const files=await get(`${root}/pulls/${number}/files?per_page=100`);

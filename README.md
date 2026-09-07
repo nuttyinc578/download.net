@@ -2,7 +2,7 @@
 
 A Windows app and game store by Nuttyinc. Built with Electron, Node.js, Go, C#, .NET Aspire, Java, and Vned.
 
-[Website](https://nuttyinc.github.io/download.net/) · [Nightly download](https://nightly.link/nuttyinc/download.net/workflows/nightly.yml/main/download.net-launcher-v1.zip) · [MIT license](LICENSE) · [Code of conduct](CODE_OF_CONDUCT.md) · [Contributing](CONTRIBUTING.md)
+[Website](https://nuttyinc578.github.io/download.net/) · [Nightly download](https://nightly.link/nuttyinc578/download.net/workflows/nightly.yml/main/download.net-launcher-v1.zip) · [MIT license](LICENSE) · [Code of conduct](CODE_OF_CONDUCT.md) · [Contributing](CONTRIBUTING.md)
 
 The website and nightly links become available after the supplied workflows are pushed and successfully run. This initial implementation has no approved app listings and no preconfigured public Nuttyinc server.
 
@@ -58,7 +58,7 @@ SHA-256 verifies integrity, not malware safety. The launcher never starts a down
 
 ## Publishing apps
 
-The desktop form accepts a whole app folder, name, ID, version, category, description, license, and GitHub token. It detects all files, displays their count and total size, and builds the same .vfdn format as the command-line builder. It creates the user’s fork, uploads the package to a public GitHub prerelease, commits one catalog manifest, and opens a pull request in nuttyinc/download.net. Every file in the selected folder becomes public. Package inspection verifies all file hashes; Java checks contained .exe files without executing them.
+The desktop form accepts a whole app folder, name, ID, version, category, description, license, and GitHub token. It detects all files, displays their count and total size, and builds the same .vfdn format as the command-line builder. It creates the user’s fork, uploads the package to a public GitHub prerelease, commits one catalog manifest, and opens a pull request in nuttyinc578/download.net. Every file in the selected folder becomes public. Package inspection verifies all file hashes; Java checks contained .exe files without executing them.
 
 The token is kept in process memory only and cleared from the input immediately. It is not stored in settings, sent to Nuttyinc, or committed. It must authorize creating a fork, uploading release assets, writing fork contents, and opening an upstream PR. GitHub organization policies and token restrictions can still reject the request; the launcher surfaces that error. The uploaded release can remain if creating the PR later fails, and the launcher links it for cleanup.
 

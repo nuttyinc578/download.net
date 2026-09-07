@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { sha256 } from './download.mjs';
 import { validateManifest, MAX_SIZE } from '../shared/manifest.mjs';
 
-const upstream = 'nuttyinc/download.net';
+const upstream = 'nuttyinc578/download.net';
 export async function inspectExe(file) {
   if (!file.toLowerCase().endsWith('.exe')) throw Error('Select a Windows .exe file.');
   const info = await stat(file);

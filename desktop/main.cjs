@@ -91,7 +91,7 @@ async function main() {
   });
   handle('open-link',async value=>{
     const u=new URL(value);
-    if(u.protocol!=='https:'||u.username||u.password||!['github.com','nuttyinc.github.io','nightly.link'].includes(u.hostname))throw Error('Link is not allowed.');
+    if(u.protocol!=='https:'||u.username||u.password||!['github.com','nuttyinc578.github.io','nightly.link'].includes(u.hostname))throw Error('Link is not allowed.');
     await shell.openExternal(u.href);
   });
   await window.loadURL(documentUrl);
