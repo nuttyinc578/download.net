@@ -1,0 +1,12 @@
+{
+  "id": "nutty-sandbox",
+  "name": "nutty sandbox",
+  "description": "a sandbox game made by one dev",
+  "kind": "game",
+  "version": "5.0.0",
+  "publisher": "nuttyinc065",
+  "url": "https://github.com/nuttyinc065/download.net/releases/download/app-nutty-sandbox-cb672a1c/nutty-sandbox.vfdn",
+  "sha256": "6b1a3b8ebdd46ec4d09803bfa863084d5212473861973959c7d74a70847c64f7",
+  "size": 98892410,
+  "license": "mit"
+}
