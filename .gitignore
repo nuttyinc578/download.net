@@ -1,0 +1,11 @@
+node_modules/
+bin/
+obj/
+dist/
+artifacts/
+.env
+data/
+*.log
+*.part
+.vs/
+services/inspector/build/

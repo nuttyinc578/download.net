@@ -1,0 +1,23 @@
+services:
+  website:
+    build:
+      context: .
+      dockerfile: services/Api/Dockerfile
+    environment:
+      BOOTSTRAP_SECRET: ${BOOTSTRAP_SECRET:?Set a random 32-byte secret}
+      ASPNETCORE_ENVIRONMENT: Production
+    ports: ['127.0.0.1:5080:8080']
+    volumes: [nutty-data:/data]
+    restart: unless-stopped
+  bootstrap:
+    build:
+      context: .
+      dockerfile: services/bootstrap/Dockerfile
+    environment:
+      BOOTSTRAP_SECRET: ${BOOTSTRAP_SECRET:?Set a random 32-byte secret}
+      NUTTY_API_URL: ${NUTTY_API_URL:?Set your public HTTPS API origin}
+      BOOTSTRAP_BIND: 0.0.0.0
+    ports: ['127.0.0.1:5090:5090']
+    restart: unless-stopped
+volumes:
+  nutty-data:

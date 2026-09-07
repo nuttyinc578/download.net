@@ -1,0 +1,6 @@
+# Require code-owner review in the repository ruleset before enabling public submissions.
+/catalog/ @nuttyinc578
+/reviews/ @nuttyinc578
+/.github/ @nuttyinc578
+/scripts/ @nuttyinc578
+/shared/ @nuttyinc578

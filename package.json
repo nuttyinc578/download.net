@@ -1,0 +1,54 @@
+{
+  "name": "download-net-launcher",
+  "version": "1.0.0",
+  "description": "Nuttyinc's community app and game store for Windows",
+  "author": "Nuttyinc",
+  "license": "MIT",
+  "private": true,
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dev": "node scripts/dev.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "build:web": "node scripts/build-web.mjs",
+    "build:desktop": "electron-builder --win nsis --x64",
+    "build:services": "dotnet build services/Api/Api.csproj -c Release",
+    "publish:catalog": "node scripts/catalog.mjs"
+  },
+  "devDependencies": {
+    "electron": "^42.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "net.nuttyinc.download",
+    "productName": "download.net",
+    "artifactName": "download.net-Setup-${version}.${ext}",
+    "directories": {
+      "output": "artifacts"
+    },
+    "files": [
+      "desktop/**/*",
+      "web/**/*",
+      "shared/**/*",
+      "LICENSE",
+      "CODE_OF_CONDUCT.md",
+      "CONTRIBUTING.md",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "license": "LICENSE",
+      "include": "installer/custom.nsh",
+      "installerSidebar": "installer/sidebar.bmp",
+      "uninstallerSidebar": "installer/sidebar.bmp"
+    },
+    "compression": "store"
+  }
+}

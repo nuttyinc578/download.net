@@ -1,0 +1,49 @@
+name: Review app submission
+on:
+  workflow_dispatch:
+    inputs:
+      pull_request:
+        description: Pull request number to review
+        required: true
+        type: number
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    environment: moderation
+    steps:
+      # Execute trusted default-branch code only. PR contents are fetched as JSON data.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Fetch submission data
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pull_request }}
+        run: node scripts/fetch-submission.mjs
+      - run: javac --release 17 -d services/inspector/build services/inspector/ExeInspector.java
+      - name: Inspect binary without executing it
+        run: node scripts/inspect-submission.mjs review-input.json
+      - name: AI listing moderation
+        env:
+          MODERATION_URL: ${{ secrets.MODERATION_URL }}
+          MODERATION_KEY: ${{ secrets.MODERATION_KEY }}
+        run: node scripts/moderate.mjs review-input.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: moderation-report
+          path: |
+            moderation-result.json
+            review-input.json
+            review-provenance.json

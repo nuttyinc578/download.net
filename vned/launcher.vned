@@ -1,0 +1,2 @@
+SET PROTOCOL 1
+IF PROTOCOL == 1 THEN PRINT '{"protocol":1,"labels":{"bootstrap":"Connecting to Nuttyinc Bootstrap…","verification":"Verifying the signed bootstrap ticket…","aspire":"Fetching the reviewed app from the Aspire website…","downloading":"Downloading with Node.js…","complete":"Download verified."}}'

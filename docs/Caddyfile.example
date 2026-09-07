@@ -1,0 +1,7 @@
+# Replace these example hosts with your own DNS names.
+api.example.com {
+    reverse_proxy 127.0.0.1:5080
+}
+bootstrap.example.com {
+    reverse_proxy 127.0.0.1:5090
+}
