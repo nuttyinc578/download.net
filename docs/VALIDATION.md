@@ -12,7 +12,7 @@ Remaining setup and limits:
 
 - The UI was not interactively tested and a real GitHub submission was not made; publishing is tested with mocked GitHub requests.
 - No public Nuttyinc backend or AI provider is configured. The initial reviewed catalog is empty.
-- GitHub access remains read-only from the earlier check, so repository changes, Pages, nightly artifacts, and release v1.0 are prepared locally but have not been published to GitHub.
+- GitHub CLI authentication was verified as nuttyinc578 with repository write/admin access on 7 September 2026. The repository now targets nuttyinc578/download.net. Check its Actions and Releases pages for current publication status.
 - The private Sites website is a preview; account operations require the hosted C# backend.
 - The previous full Aspire DCP startup attempt timed out. The API and AppHost compiled previously, and the direct Go-to-C# verification smoke passed. Verify full AppHost startup on the intended host.
 - The launcher build is unsigned. Folder packages preserve portable app files; they do not perform application-specific registry, driver, or system installer steps.
