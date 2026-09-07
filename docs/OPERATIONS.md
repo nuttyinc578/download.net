@@ -24,7 +24,7 @@ The current account implementation provides PBKDF2-SHA256 with individual salts,
 
 - Enable GitHub Pages with **GitHub Actions** as its source.
 - Push this implementation to `main`; `pages.yml` publishes the landing page and `nightly.yml` builds the complete Windows installer and app folder ZIP, including both backend services.
-- The main Download now button links to the permanent v1.0 release asset and does not depend on the GitHub API or nightly.link being available.
+- The main Download now button links to the permanent v1.0.1 installer asset and does not depend on the GitHub API or nightly.link being available.
 - The nightly URL points to the latest successful main-branch artifact, named `download.net-launcher-v1`. Artifacts expire after 30 days; run the workflow again to refresh it.
 - Push a version tag such as `v1.0.1` with matching package version and `docs/RELEASE-v1.0.1.md`. The workflow creates the tagged release with setup, the complete app folder ZIP, and SHA-256 checksums. Keep old release tags immutable.
 - If nightly.link reports that this public repository cannot be found, install the [nightly.link GitHub App](https://github.com/apps/nightly-link) for this repository with read-only Actions and metadata access, as recommended by [nightly.link](https://nightly.link/), then recheck the link. Public downloads do not require visitors to install the app. The tagged release remains the fallback.
@@ -56,7 +56,7 @@ Protect `main` with required checks and code-owner reviews. Require review of `/
 
 ## Current deployment limits
 
-The accompanying Sites URL is a hosted website preview. It includes the static store UI; the Nuttyinc account and Bootstrap services still require the server deployment above. GitHub Pages and release v1.0 are published at nuttyinc578/download.net. The separate Sites preview has not received the latest folder-edition update. Never paste a personal access token into chat.
+The accompanying Sites URL is a hosted website preview. It includes the static store UI; the Nuttyinc account and Bootstrap services still require the server deployment above. GitHub Pages and release v1.0.1 are published at nuttyinc578/download.net. The desktop release includes its automatic local backend. The separate Sites preview has not received the latest folder-edition update. Never paste a personal access token into chat.
 
 
 For local development, set CATALOG_FILE to an absolute local approved-catalog JSON file and ASPNETCORE_ENVIRONMENT to Development. The same catalog validation applies. Production ignores CATALOG_FILE and fetches the reviewed GitHub catalog.

@@ -2,9 +2,9 @@
 
 A Windows app and game store by Nuttyinc. Built with Electron, Node.js, Go, C#, .NET Aspire, Java, and Vned.
 
-[Website](https://nuttyinc578.github.io/download.net/) · [Download v1.0](https://github.com/nuttyinc578/download.net/releases/download/v1.0/download.net-launcher-v1-folder.zip) · [Nightly download](https://nightly.link/nuttyinc578/download.net/workflows/nightly.yml/main/download.net-launcher-v1.zip) · [MIT license](LICENSE) · [Code of conduct](CODE_OF_CONDUCT.md) · [Contributing](CONTRIBUTING.md)
+[Website](https://nuttyinc578.github.io/download.net/) · [Download installer v1.0.1](https://github.com/nuttyinc578/download.net/releases/download/v1.0.1/download.net-Setup-1.0.1.exe) · [Portable folder](https://github.com/nuttyinc578/download.net/releases/download/v1.0.1/download.net-launcher-v1-folder.zip) · [Nightly download](https://nightly.link/nuttyinc578/download.net/workflows/nightly.yml/main/download.net-launcher-v1.zip) · [MIT license](LICENSE) · [Code of conduct](CODE_OF_CONDUCT.md) · [Contributing](CONTRIBUTING.md)
 
-The website and v1.0 release are published. Download the complete folder ZIP, extract every file together, and open download.net.exe. Nightly builds are also produced by GitHub Actions; if nightly.link is unavailable, use the permanent v1.0 download. This initial implementation has no approved app listings and no preconfigured public Nuttyinc server.
+The v1.0.1 installer and portable folder include the current launcher and a Nuttyinc backend that starts automatically on this PC. No manual connection setup or separate developer SDKs are needed. Nightly builds are also produced by GitHub Actions; if nightly.link is unavailable, use the permanent release downloads. The reviewed catalog starts empty, and accounts are local to this PC.
 
 ## Run locally
 
