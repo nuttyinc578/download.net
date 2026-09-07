@@ -32,9 +32,9 @@ export async function assetResponse(url, signal, fetcher = fetch) {
 export async function downloadVerified(manifest, directory, {signal, progress = ()=>{}, fetcher = fetch} = {}) {
   const m = validateManifest(manifest);
   await mkdir(directory,{recursive:true});
-  const target = join(directory,`${m.id}-${m.sha256.slice(0,16)}.exe`);
+  const target = join(directory,`${m.id}-${m.sha256.slice(0,16)}.vfdn`);
   try {
-    if ((await stat(target)).size === m.size && await sha256(target) === m.sha256) { progress({stage:'complete',bytes:m.size,total:m.size,cached:true}); return target; }
+    if ((await stat(target)).size === m.size && await sha256(target) === m.sha256) { progress({stage:'downloaded',bytes:m.size,total:m.size,cached:true}); return target; }
   } catch { /* No reusable verified cache. */ }
   const temp = target + '.part';
   await rm(temp,{force:true});
@@ -59,7 +59,7 @@ export async function downloadVerified(manifest, directory, {signal, progress = 
     if (writeError) throw writeError;
     if (bytes !== m.size || hash.digest('hex') !== m.sha256) throw Error('Verification failed. The file was discarded.');
     await rename(temp,target);
-    progress({stage:'complete',bytes,total:m.size,cached:false});
+    progress({stage:'downloaded',bytes,total:m.size,cached:false});
     return target;
   } catch (error) {
     if (out && !out.closed) { out.destroy(); await once(out,'close').catch(()=>{}); }

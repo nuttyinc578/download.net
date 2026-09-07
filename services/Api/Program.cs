@@ -42,11 +42,17 @@ async Task<List<AppManifest>> Catalog() {
     await catalogLock.WaitAsync();
     try {
         if (DateTimeOffset.UtcNow < catalogExpiry) return catalog;
+        string body;
+        var localCatalog = Environment.GetEnvironmentVariable("CATALOG_FILE");
+        if (app.Environment.IsDevelopment() && !string.IsNullOrWhiteSpace(localCatalog)) {
+            body = await File.ReadAllTextAsync(Path.GetFullPath(localCatalog));
+        } else {
         var url = Environment.GetEnvironmentVariable("CATALOG_URL") ?? "https://raw.githubusercontent.com/nuttyinc/download.net/main/catalog/apps.json";
         var parsed = new Uri(url);
         if (parsed.Scheme != "https" || parsed.Host != "raw.githubusercontent.com") throw new InvalidOperationException("CATALOG_URL must use raw.githubusercontent.com over HTTPS.");
         var client = app.Services.GetRequiredService<IHttpClientFactory>().CreateClient("catalog");
-        var body = await client.GetStringAsync(url);
+        body = await client.GetStringAsync(url);
+        }
         if (body.Length > 2_000_000) throw new InvalidDataException("Catalog too large.");
         var next = JsonSerializer.Deserialize<List<AppManifest>>(body, jsonOptions) ?? [];
         if (next.Count > 5000 || next.Any(m => !m.Valid())) throw new InvalidDataException("Invalid catalog.");
@@ -125,6 +131,6 @@ record Session(string Name, string Email, DateTimeOffset Expires);
 record Credentials(string? Name, string? Email, string? Password);
 record Ticket(string Nonce, long Expires, string Signature);
 record AppManifest(string Id, string Name, string Description, string Kind, string Version, string Publisher, string Url, string Sha256, long Size, string License) {
-    public bool Valid() => System.Text.RegularExpressions.Regex.IsMatch(Id ?? "", "^[a-z0-9][a-z0-9-]{1,63}$") && !string.IsNullOrWhiteSpace(Name) && Name.Length <= 100 && Description is { Length: <= 2000 } && Kind is "app" or "game" && Version is { Length: > 0 and <= 40 } && Publisher is { Length: > 0 and <= 100 } && License is { Length: > 0 and <= 100 } && Size is > 0 and <= 2_147_483_648 && System.Text.RegularExpressions.Regex.IsMatch(Sha256 ?? "", "^[a-f0-9]{64}$") && Uri.TryCreate(Url, UriKind.Absolute, out var u) && u.Scheme == "https" && u.Host == "github.com" && u.Port == 443 && u.UserInfo == "" && u.Query == "" && u.Fragment == "" && System.Text.RegularExpressions.Regex.IsMatch(u.AbsolutePath, "^/[^/]+/[^/]+/releases/download/[^/]+/[^/]+\\.exe$");
+    public bool Valid() => System.Text.RegularExpressions.Regex.IsMatch(Id ?? "", "^[a-z0-9][a-z0-9-]{1,63}$") && !string.IsNullOrWhiteSpace(Name) && Name.Length <= 100 && Description is { Length: <= 2000 } && Kind is "app" or "game" && Version is { Length: > 0 and <= 40 } && Publisher is { Length: > 0 and <= 100 } && License is { Length: > 0 and <= 100 } && Size is > 0 and <= 2_147_483_648 && System.Text.RegularExpressions.Regex.IsMatch(Sha256 ?? "", "^[a-f0-9]{64}$") && Uri.TryCreate(Url, UriKind.Absolute, out var u) && u.Scheme == "https" && u.Host == "github.com" && u.Port == 443 && u.UserInfo == "" && u.Query == "" && u.Fragment == "" && System.Text.RegularExpressions.Regex.IsMatch(u.AbsolutePath, "^/[^/]+/[^/]+/releases/download/[^/]+/[^/]+\\.vfdn$");
 }
 

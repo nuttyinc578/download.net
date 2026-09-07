@@ -28,14 +28,18 @@ jobs:
           Invoke-WebRequest 'https://raw.githubusercontent.com/nuttyinc578/Vned-progeraiming-lingerge/ca943f962c468b6d1d35025672aa14cec30b4c53/68c9f55e4dc1f/vned/Vned%20Runtime.py' -OutFile "$env:RUNNER_TEMP/vned-runtime.py"
           $env:VNED_RUNTIME="$env:RUNNER_TEMP/vned-runtime.py"
           npm run build:web
-      - run: node scripts/installer-art.mjs
       - run: dotnet build services/Api/Api.csproj -c Release
       - run: npm test
       - run: npm run build:desktop
+      - name: Bundle the complete launcher folder
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [System.IO.Compression.ZipFile]::CreateFromDirectory((Resolve-Path artifacts/win-unpacked).Path, (Join-Path $PWD 'artifacts/download.net-launcher-v1-folder.zip'))
       - uses: actions/upload-artifact@v4
         with:
           name: download.net-launcher-v1
-          path: artifacts/*.exe
+          path: artifacts/*-folder.zip
           if-no-files-found: error
           retention-days: 30
   release:
@@ -53,4 +57,4 @@ jobs:
       - name: Publish v1.0
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create v1.0 artifacts/*.exe --title 'download.net launcher v1' --notes-file docs/RELEASE-v1.0.md --verify-tag
+        run: gh release create v1.0 artifacts/*-folder.zip --title 'download.net launcher v1' --notes-file docs/RELEASE-v1.0.md --verify-tag

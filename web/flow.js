@@ -6,6 +6,7 @@ window.nuttyFlow = {
     "verification": "Verifying the signed bootstrap ticketâ€¦",
     "aspire": "Fetching the reviewed app from the Aspire websiteâ€¦",
     "downloading": "Downloading with Node.jsâ€¦",
-    "complete": "Download verified."
+    "installing": "Verifying and installing every fileâ€¦",
+    "complete": "All files installed."
   }
 };

@@ -6,10 +6,13 @@ let window, settings, active, selected, lastDownload, publishing=false;
 async function main() {
   const { trustedService } = await import('../shared/manifest.mjs');
   const { downloadVerified } = await import('./download.mjs');
-  const { inspectExe, publishApp } = await import('./publish.mjs');
+  const { publishApp } = await import('./publish.mjs');
+  const {scanFolder,installPackage,safeDirectory}=await import('../shared/folder-package.mjs');
+  const defaultInstallRoot=join(process.env.LOCALAPPDATA||app.getPath('appData'),'Programs');
   const configFile=join(app.getPath('userData'),'settings.json');
   settings={apiUrl:process.env.NUTTY_API_URL||'',bootstrapUrl:process.env.NUTTY_BOOTSTRAP_URL||''};
   try { settings=JSON.parse(await fs.readFile(configFile,'utf8')); if(settings.apiUrl)trustedService(settings.apiUrl);if(settings.bootstrapUrl)trustedService(settings.bootstrapUrl); } catch { /* Configure in the first-run screen. */ }
+  settings.installRoot=settings.installRoot||defaultInstallRoot;
   const documentUrl=pathToFileURL(join(__dirname,'../web/store.html')).href;
   window=new BrowserWindow({width:1320,height:860,minWidth:760,minHeight:600,backgroundColor:'#10120f',title:'download.net',autoHideMenuBar:true,webPreferences:{preload:join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
   window.webContents.setWindowOpenHandler(()=>({action:'deny'}));
@@ -17,7 +20,7 @@ async function main() {
   session.defaultSession.setPermissionRequestHandler((_wc,_permission,callback)=>callback(false));
   function handle(name,fn) { ipcMain.handle(name,async(event,...args)=>{
     if(event.sender!==window.webContents || event.senderFrame!==window.webContents.mainFrame || event.senderFrame.url.split('#')[0]!==documentUrl) throw Error('Untrusted caller.');
-    try { return await fn(...args); } catch(e) { throw Error(e.message); }
+    try { return await fn(...args); } catch(e) { throw Error(['EACCES','EPERM'].includes(e.code)?'Windows cannot write to this folder. Choose a writable Programs folder in Settings.':e.message); }
   }); }
   const progress=(value)=>{if(!window.isDestroyed()) window.webContents.send('progress',value);};
   async function request(origin,path,body,useSession=true) {
@@ -30,9 +33,16 @@ async function main() {
   handle('settings:get',()=>settings);
   handle('settings:set',async next=>{
     if(active||publishing)throw Error('Wait until the current transfer finishes.');
-    const safe={apiUrl:trustedService(next.apiUrl),bootstrapUrl:trustedService(next.bootstrapUrl)};
+    const safe={apiUrl:trustedService(next.apiUrl),bootstrapUrl:trustedService(next.bootstrapUrl),installRoot:settings.installRoot};
     if(settings.apiUrl && settings.apiUrl!==safe.apiUrl) await session.defaultSession.clearStorageData({storages:['cookies']});
     settings=safe; await fs.writeFile(configFile,JSON.stringify(settings));return settings;
+  });
+  handle('settings:choose-folder',async()=>{
+    if(active||publishing)throw Error('Wait until the current transfer finishes.');
+    const result=await dialog.showOpenDialog(window,{title:'Choose a Programs folder',defaultPath:settings.installRoot,properties:['openDirectory','createDirectory']});
+    if(result.canceled)return null;
+    settings.installRoot=await safeDirectory(result.filePaths[0]);
+    await fs.writeFile(configFile,JSON.stringify(settings));return settings.installRoot;
   });
   handle('api',(route,body)=>{
     if(!['/api/apps','/api/auth/me','/api/auth/login','/api/auth/signup','/api/auth/logout'].includes(route)) throw Error('Unsupported API route.');
@@ -55,23 +65,26 @@ async function main() {
       progress({stage:'aspire'});
       const manifest=await request(settings.apiUrl,`/api/apps/${id}/download`);
       if(manifest.id!==id)throw Error('Server returned the wrong app.');
-      const destination=join(app.getPath('downloads'),'download.net');
-      lastDownload=await downloadVerified(manifest,destination,{signal:active.signal,progress});
-      return {name:manifest.name,path:lastDownload};
+      const destination=join(app.getPath('userData'),'package-cache');
+      const file=await downloadVerified(manifest,destination,{signal:active.signal,progress});
+      const installed=await installPackage(file,settings.installRoot,{id:manifest.id,expectedSha256:manifest.sha256,signal:active.signal,progress});
+      lastDownload=installed.path;
+      return {name:manifest.name,...installed};
     } finally { active=null; }
   });
   handle('download:cancel',()=>{active?.abort();});
   handle('download:reveal',()=>{if(lastDownload)shell.showItemInFolder(lastDownload);});
   handle('publish:choose',async()=>{
     if(publishing)throw Error('Wait for publishing to finish.');
-    const result=await dialog.showOpenDialog(window,{properties:['openFile'],filters:[{name:'Windows executable',extensions:['exe']}]});
+    const result=await dialog.showOpenDialog(window,{title:'Choose the complete app folder',properties:['openDirectory']});
     if(result.canceled)return null;
-    selected=result.filePaths[0];const info=await inspectExe(selected);
-    return {...info,name:require('node:path').basename(selected)};
+    const candidate=result.filePaths[0],info=await scanFolder(candidate);
+    selected=candidate;
+    return {size:info.totalSize,fileCount:info.fileCount,name:require('node:path').basename(selected)};
   });
   handle('publish:submit',async(fields,token)=>{
     if(publishing)throw Error('A submission is already running.');
-    if(!selected)throw Error('Choose your .exe first.');
+    if(!selected)throw Error('Choose your complete app folder first.');
     await request(settings.apiUrl,'/api/auth/me');
     publishing=true;
     try{return await publishApp(selected,fields,token,message=>progress({stage:'publishing',message}));}finally{publishing=false;token='';}

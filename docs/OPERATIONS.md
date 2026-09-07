@@ -15,9 +15,9 @@ The current account implementation provides PBKDF2-SHA256 with individual salts,
 ## GitHub Pages and release
 
 - Enable GitHub Pages with **GitHub Actions** as its source.
-- Push this implementation to `main`; `pages.yml` publishes the landing page and `nightly.yml` builds the Windows installer.
+- Push this implementation to `main`; `pages.yml` publishes the landing page and `nightly.yml` builds the complete Windows app folder ZIP.
 - The nightly URL points to the latest successful main-branch artifact, named `download.net-launcher-v1`. Artifacts expire after 30 days; run the workflow again to refresh it.
-- Push tag `v1.0` when you are ready to publish. The workflow creates a release named **download.net launcher v1**, attaches the installer, and includes the nightly.link URL.
+- Push tag `v1.0` when you are ready to publish. The workflow creates a release named **download.net launcher v1**, attaches the app folder ZIP, and includes the nightly.link URL.
 - Workflow write permissions must allow releases and Pages. Configure branch rules before allowing external contributions.
 
 ## Moderation is a required review process
@@ -30,7 +30,7 @@ Create an environment named `moderation`, restrict deployment to the main branch
 
 Allowed decisions are `approve`, `review`, and `reject`. Errors, invalid responses, or missing credentials fail the review and leave the app pending. The adapter is provider-neutral; connect your own AI service. No live AI provider or secret is configured by this source package.
 
-Run **Review app submission** with a PR number. It checks out trusted main-branch code, fetches the single submission manifest as data from the exact PR commit, downloads the binary with hash and size checks, and uses Java to inspect PE structure without executing the `.exe`. It then moderates the listing text. The report artifact binds the review to the PR head SHA and binary hash. The workflow does not merge, comment, or change catalog permissions.
+Run **Review app submission** with a PR number. It checks out trusted main-branch code, fetches the single submission manifest as data from the exact PR commit, downloads the .vfdn package with hash and size checks, validates and extracts its file inventory into an isolated temporary directory, and uses Java to inspect every contained .exe without executing it. It then moderates the listing text. The report artifact binds the review to the PR head SHA and package hash. The workflow does not merge, comment, or change catalog permissions.
 
 Before approval, inspect distribution rights, publisher provenance, dependency/installer behavior, antivirus results from your chosen scanner, and the AI report. Java structural validation and AI text review are not antivirus scans. Do not run submitted executable files on the review runner.
 
@@ -48,3 +48,5 @@ Protect `main` with required checks and code-owner reviews. Require review of `/
 
 The accompanying Sites URL is a hosted website preview. It includes the static store UI; the Nuttyinc account and Bootstrap services still require the server deployment above. GitHub release and Pages publication require repository write access. Connect a valid GitHub account with those permissions to publish the prepared code. Never paste a personal access token into chat.
 
+
+For local development, set CATALOG_FILE to an absolute local approved-catalog JSON file and ASPNETCORE_ENVIRONMENT to Development. The same catalog validation applies. Production ignores CATALOG_FILE and fetches the reviewed GitHub catalog.

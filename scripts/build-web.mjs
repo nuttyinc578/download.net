@@ -5,7 +5,7 @@ import vm from 'node:vm';
 if(process.env.VNED_RUNTIME){
  const output=execFileSync(process.env.PYTHON||'python',[process.env.VNED_RUNTIME,'vned/launcher.vned'],{encoding:'utf8',env:{...process.env,PYTHONIOENCODING:'utf-8'},timeout:10000});
  const flow=JSON.parse(output.trim());
- if(flow.protocol!==1||['bootstrap','verification','aspire','downloading','complete'].some(k=>typeof flow.labels[k]!=='string'))throw Error('Invalid Vned flow output.');
+ if(flow.protocol!==1||['bootstrap','verification','aspire','downloading','installing','complete'].some(k=>typeof flow.labels[k]!=='string'))throw Error('Invalid Vned flow output.');
  await writeFile('web/flow.js',`// Compiled from vned/launcher.vned using the upstream Python Vned runtime.\nwindow.nuttyFlow = ${JSON.stringify(flow,null,2)};\n`);
  console.log('Compiled the Vned launcher flow.');
 }else{await readFile('web/flow.js');console.log('Using the committed Vned-compiled flow. Set VNED_RUNTIME to recompile.');}

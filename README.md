@@ -38,29 +38,27 @@ dotnet run --project services/AppHost
 
 The AppHost orchestrates the C# website and the Go Bootstrap service with service references and startup ordering. Node.js runs the Electron download engine. Java runs executable inspection in the review workflow. Vned generates the launcher’s connection-stage text at build time.
 
-## Build the installer
+## Build the complete launcher folder
 
-```sh
-node scripts/installer-art.mjs
-npm run build:web
-npm run build:desktop
-```
+Run npm run build:web, then npm run build:desktop. The Windows x64 app folder is written to artifacts/win-unpacked. Keep every file together and open download.net.exe. The nightly workflow distributes the whole folder as a ZIP.
 
-Windows x64 setup is written to `artifacts/download.net-Setup-1.0.0.exe`. The custom NSIS wizard includes the MIT agreement, installation directory, desktop shortcut, and uninstaller. The default local build is unsigned. For distribution under your publisher identity, configure electron-builder code signing before release.
+## Package your own app folder
+
+Build your app with its normal compiler first. Include its executable, DLLs, assets, configuration, and other runtime files in one release folder. Use vfdn.ps1 build or vnedfordownloaddotnet build to bundle every file into one .vfdn package. See [the package format and command guide](docs/FOLDER-PACKAGES.md) for commands and installation behavior.
 
 ## How downloads work
 
 1. Electron requests a short-lived HMAC-signed ticket from Nuttyinc Bootstrap.
 2. It rejects an unexpected API origin and asks the C# API to verify the ticket. Reused and expired tickets are rejected.
 3. The launcher fetches the app manifest from the Aspire website’s reviewed GitHub catalog.
-4. Node.js streams the `.exe` into a temporary file. Redirects are restricted to GitHub release hosts, with limits on size and SHA-256 validation.
-5. Only matching files are finalized in the user’s `Downloads/download.net` directory. Failed or cancelled partials are discarded. Existing downloads are hashed again before reuse.
+4. Node.js streams the .vfdn folder package into its local cache. Redirects are restricted to GitHub release hosts, with limits on size and SHA-256 validation.
+5. After verifying the package hash, the launcher extracts all files into a temporary folder and verifies each file. Only a completely verified folder is moved to %LOCALAPPDATA%\Programs\<app-id>-<package-hash-prefix>. Settings lets you choose another writable Programs folder, such as C:\Programs. Failed or cancelled partials are discarded; existing downloads and installations are verified before reuse.
 
 SHA-256 verifies integrity, not malware safety. The launcher never starts a downloaded executable automatically. The API caches the reviewed catalog in memory for five minutes and writes a cache snapshot to disk. It fails closed when a new catalog fetch fails after expiry.
 
 ## Publishing apps
 
-The desktop form accepts a local `.exe`, name, ID, version, category, description, license, and GitHub token. It checks PE structure and calculates the real file hash and size. It then creates the user’s fork, uploads the binary to a public GitHub prerelease, commits one JSON manifest, and opens a pull request in `nuttyinc/download.net`.
+The desktop form accepts a whole app folder, name, ID, version, category, description, license, and GitHub token. It detects all files, displays their count and total size, and builds the same .vfdn format as the command-line builder. It creates the user’s fork, uploads the package to a public GitHub prerelease, commits one catalog manifest, and opens a pull request in nuttyinc/download.net. Every file in the selected folder becomes public. Package inspection verifies all file hashes; Java checks contained .exe files without executing them.
 
 The token is kept in process memory only and cleared from the input immediately. It is not stored in settings, sent to Nuttyinc, or committed. It must authorize creating a fork, uploading release assets, writing fork contents, and opening an upstream PR. GitHub organization policies and token restrictions can still reject the request; the launcher surfaces that error. The uploaded release can remain if creating the PR later fails, and the launcher links it for cleanup.
 
@@ -84,6 +82,6 @@ javac --release 17 -d services/inspector/build services/inspector/ExeInspector.j
 node scripts/validate-catalog.mjs
 ```
 
-Tests exercise real account signup/login/logout, password hashing, bootstrap signatures and replay rejection, manifest validation, verified cache reuse, corrupted/truncated/oversized/cancelled downloads, redirect restrictions, and Windows PE validation.
+Tests exercise real account signup/login/logout, password hashing, bootstrap signatures and replay rejection, manifest validation, verified cache reuse, corrupted/truncated/oversized/cancelled downloads, redirect restrictions, Windows PE validation, whole-folder round trips, unsafe paths and junctions, cancelled extraction, deterministic builds, and preservation of existing installations.
 
 

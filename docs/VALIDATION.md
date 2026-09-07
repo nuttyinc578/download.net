@@ -1,27 +1,19 @@
-# Validation and remaining setup
+# Folder edition validation — 7 September 2026
 
-Validated on 7 September 2026:
+- All 29 Node tests passed. Coverage includes account sessions, signed Bootstrap tickets, acceptance of .vfdn catalog listings and rejection of old .exe listings, GitHub publishing requests, complete-folder installation, cache integrity, unsafe paths/junctions, cancellation, and preserving existing installations.
+- The .NET API build passed with zero warnings and zero errors.
+- The actual Python Vned runtime compiled the updated download and installation flow.
+- The Windows x64 portable Electron folder was built. All 18 checked packaged files, including the builder commands, match current source.
+- The command alias built a folder with an executable and nested asset. Package verification and the real Java inspector passed without executing the submitted app.
+- The PowerShell wrapper parsed, but this machine's execution policy blocks running .ps1 files. The .cmd alias works without changing that policy.
+- The website production build passed. Its generated storefront files match source, and the restored local preview returned HTTP 200.
 
-- Windows NSIS installer built: download.net-Setup-1.0.0.exe (103,431,638 bytes).
-- All 17 Node tests passed, including account signup/login/logout, bootstrap ticket signatures and replay rejection, download integrity, cache handling, safe redirects, PE inspection, GitHub submission requests, and stale moderation approval rejection.
-- The .NET API and Aspire AppHost compiled successfully.
-- The Java executable inspector compiled and checked both a test fixture and the generated installer without executing them.
-- A direct integration check passed from Go Bootstrap to C# verification; the C# website served the storefront.
-- The Windows installer archive passed 7-Zip integrity testing. Its embedded archive produces a normal trailing-data warning because it is inside an installer executable.
-- All 14 checked packaged launcher files exactly matched the tested source.
-- The website production build passed and its private Sites deployment succeeded.
-- Vned's actual Python runtime compiled vned/launcher.vned into the launcher flow configuration.
+Remaining setup and limits:
 
-Limitations:
-
-- The installed app was not run through an interactive installation or a complete live GitHub submission during this task. GitHub publishing is covered by mocked request tests.
-- Local Aspire DCP startup timed out, so the full AppHost runtime could not be verified. The direct Go/C# service path passed. Use npm run dev for the local fallback, and verify the AppHost on the intended server/development machine.
-- The installer is unsigned. Configure publisher code signing before a signed public release.
-- No public Nuttyinc backend or AI provider credentials are configured.
-- The initial reviewed catalog is empty. It becomes reachable when the repository source/catalog is published.
-- GitHub access was rechecked and remains read-only, so the repository changes, Pages workflow, nightly workflow, and v1.0 release have not been published.
-- The live Sites URL is a private website/store preview. Account operations run on the C# website after backend deployment.
-
-Installer SHA-256:
-c12b87ad16d28a266b5c103eacdb1be77a35a6cb14774ac403a6372cb60d8274
+- The UI was not interactively tested and a real GitHub submission was not made; publishing is tested with mocked GitHub requests.
+- No public Nuttyinc backend or AI provider is configured. The initial reviewed catalog is empty.
+- GitHub access remains read-only from the earlier check, so repository changes, Pages, nightly artifacts, and release v1.0 are prepared locally but have not been published to GitHub.
+- The private Sites website is a preview; account operations require the hosted C# backend.
+- The previous full Aspire DCP startup attempt timed out. The API and AppHost compiled previously, and the direct Go-to-C# verification smoke passed. Verify full AppHost startup on the intended host.
+- The launcher build is unsigned. Folder packages preserve portable app files; they do not perform application-specific registry, driver, or system installer steps.
 

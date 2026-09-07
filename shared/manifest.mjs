@@ -6,9 +6,9 @@ export function validateManifest(m) {
   }
   if (!['app','game'].includes(m.kind)) throw Error('Choose app or game.');
   if (!/^[a-f0-9]{64}$/.test(m.sha256)) throw Error('SHA-256 must be 64 lowercase hexadecimal characters.');
-  if (!Number.isSafeInteger(m.size) || m.size < 1 || m.size > MAX_SIZE) throw Error('Executable must be between 1 byte and 2 GiB.');
+  if (!Number.isSafeInteger(m.size) || m.size < 1 || m.size > MAX_SIZE) throw Error('Package must be between 1 byte and 2 GiB.');
   const u = new URL(m.url);
-  if (u.protocol !== 'https:' || u.hostname !== 'github.com' || u.port || u.username || u.password || u.search || u.hash || !/^\/[^/]+\/[^/]+\/releases\/download\/[^/]+\/[^/]+\.exe$/.test(u.pathname)) throw Error('Use an HTTPS GitHub release asset URL ending in .exe.');
+  if (u.protocol !== 'https:' || u.hostname !== 'github.com' || u.port || u.username || u.password || u.search || u.hash || !/^\/[^/]+\/[^/]+\/releases\/download\/[^/]+\/[^/]+\.vfdn$/.test(u.pathname)) throw Error('Use an HTTPS GitHub release asset URL ending in .vfdn.');
   return Object.fromEntries(['id','name','description','kind','version','publisher','url','sha256','size','license'].map(k=>[k,m[k]]));
 }
 export function trustedService(value) {

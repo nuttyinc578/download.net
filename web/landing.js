@@ -14,6 +14,6 @@ button.addEventListener('click',()=>{if(ready&&agreement.checked)location.href='
   if(!artifacts.ok)throw Error();
   const available=(await artifacts.json()).artifacts?.some(a=>a.name==='download.net-launcher-v1'&&!a.expired);
   if(!available)throw Error();
-  ready=true;status.textContent='A launcher build is available. Read and accept the MIT license to download.';button.disabled=!agreement.checked;
+  ready=true;status.textContent='A complete launcher folder ZIP is available. Read and accept the MIT license to download.';button.disabled=!agreement.checked;
  }catch{status.textContent='The launcher build has not been published yet, or GitHub is unavailable. Check the repository for release status.';}
 })();

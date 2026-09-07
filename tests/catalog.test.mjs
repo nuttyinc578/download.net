@@ -10,7 +10,7 @@ test('catalog keeps submissions pending and requires fresh approval after a list
  const root=await mkdtemp(join(tmpdir(),'nutty-catalog-'));t.after(()=>rm(root,{recursive:true,force:true}));
  for(const name of ['catalog','submissions','reviews'])await mkdir(join(root,name));
  await writeFile(join(root,'catalog/apps.json'),'[]');
- const app=validateManifest({id:'example-app',name:'Example app',description:'Reviewed description',kind:'app',version:'1.0',publisher:'tester',url:'https://github.com/tester/releases/releases/download/v1/example.exe',sha256:'a'.repeat(64),size:100,license:'MIT'});
+ const app=validateManifest({id:'example-app',name:'Example app',description:'Reviewed description',kind:'app',version:'1.0',publisher:'tester',url:'https://github.com/tester/releases/releases/download/v1/example.vfdn',sha256:'a'.repeat(64),size:100,license:'MIT'});
  const submission=join(root,'submissions/example-app.json');await writeFile(submission,JSON.stringify(app));
  const run=()=>execFileSync(process.execPath,[resolve('scripts/catalog.mjs')],{cwd:root,encoding:'utf8',windowsHide:true});
  const catalog=async()=>JSON.parse(await readFile(join(root,'catalog/apps.json'),'utf8'));
