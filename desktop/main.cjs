@@ -2,7 +2,10 @@ const { app, BrowserWindow, ipcMain, dialog, shell, net, session } = require('el
 const { join } = require('node:path');
 const fs = require('node:fs/promises');
 const { pathToFileURL } = require('node:url');
-let window, settings, active, selected, lastDownload, publishing=false;
+let window, settings, active, selected, lastDownload, publishing=false, backend, backendError, quitting=false;
+const hasLock=app.requestSingleInstanceLock();
+if(!hasLock)app.quit();
+app.on('second-instance',()=>{if(window){if(window.isMinimized())window.restore();window.focus();}});
 async function main() {
   const { trustedService } = await import('../shared/manifest.mjs');
   const { downloadVerified } = await import('./download.mjs');
@@ -10,9 +13,19 @@ async function main() {
   const {scanFolder,installPackage,safeDirectory}=await import('../shared/folder-package.mjs');
   const defaultInstallRoot=join(process.env.LOCALAPPDATA||app.getPath('appData'),'Programs');
   const configFile=join(app.getPath('userData'),'settings.json');
-  settings={apiUrl:process.env.NUTTY_API_URL||'',bootstrapUrl:process.env.NUTTY_BOOTSTRAP_URL||''};
-  try { settings=JSON.parse(await fs.readFile(configFile,'utf8')); if(settings.apiUrl)trustedService(settings.apiUrl);if(settings.bootstrapUrl)trustedService(settings.bootstrapUrl); } catch { /* Configure in the first-run screen. */ }
-  settings.installRoot=settings.installRoot||defaultInstallRoot;
+  settings={installRoot:defaultInstallRoot};
+  try { const saved=JSON.parse(await fs.readFile(configFile,'utf8')); if(typeof saved.installRoot==='string')settings.installRoot=saved.installRoot; } catch { /* Keep default Programs folder. */ }
+  const {startLocalBackend}=await import('./local-backend.mjs');
+  const connectionReady=startLocalBackend({
+    runtimeDir:app.isPackaged?join(process.resourcesPath,'runtime'):join(__dirname,'../artifacts/runtime'),
+    dataDir:join(app.getPath('userData'),'backend'),
+    onExit:message=>{backendError=message;if(window&&!window.isDestroyed())window.webContents.send('connection-error',message);}
+  }).then(async value=>{
+    backend=value;
+    if(quitting){await backend.stop();return;}
+    settings.apiUrl=value.apiUrl;settings.bootstrapUrl=value.bootstrapUrl;
+  }).catch(error=>{backendError=error.message;});
+  async function connected(){await connectionReady;if(backendError||!backend)throw Error(backendError||'Nuttyinc is still starting. Please try again.');}
   const documentUrl=pathToFileURL(join(__dirname,'../web/store.html')).href;
   window=new BrowserWindow({width:1320,height:860,minWidth:760,minHeight:600,backgroundColor:'#10120f',title:'download.net',autoHideMenuBar:true,webPreferences:{preload:join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
   window.webContents.setWindowOpenHandler(()=>({action:'deny'}));
@@ -30,29 +43,23 @@ async function main() {
     if(!response.ok) throw Error(json.error||`Server returned ${response.status}.`);
     return json;
   }
-  handle('settings:get',()=>settings);
-  handle('settings:set',async next=>{
-    if(active||publishing)throw Error('Wait until the current transfer finishes.');
-    const safe={apiUrl:trustedService(next.apiUrl),bootstrapUrl:trustedService(next.bootstrapUrl),installRoot:settings.installRoot};
-    if(settings.apiUrl && settings.apiUrl!==safe.apiUrl) await session.defaultSession.clearStorageData({storages:['cookies']});
-    settings=safe; await fs.writeFile(configFile,JSON.stringify(settings));return settings;
-  });
+  handle('settings:get',async()=>{await connectionReady;return {installRoot:settings.installRoot,version:app.getVersion(),connected:!!backend&&!backendError,connectionError:backendError||null};});
   handle('settings:choose-folder',async()=>{
     if(active||publishing)throw Error('Wait until the current transfer finishes.');
     const result=await dialog.showOpenDialog(window,{title:'Choose a Programs folder',defaultPath:settings.installRoot,properties:['openDirectory','createDirectory']});
     if(result.canceled)return null;
     settings.installRoot=await safeDirectory(result.filePaths[0]);
-    await fs.writeFile(configFile,JSON.stringify(settings));return settings.installRoot;
+    await fs.writeFile(configFile,JSON.stringify({installRoot:settings.installRoot}));return settings.installRoot;
   });
-  handle('api',(route,body)=>{
+  handle('api',async(route,body)=>{
     if(!['/api/apps','/api/auth/me','/api/auth/login','/api/auth/signup','/api/auth/logout'].includes(route)) throw Error('Unsupported API route.');
-    if(!settings.apiUrl)throw Error('Connect your Nuttyinc server in Settings first.');
+    await connected();
     return request(settings.apiUrl,route,body);
   });
   handle('download',async id=>{
     if(active)throw Error('A download is already running.');
     if(!/^[a-z0-9][a-z0-9-]{1,63}$/.test(id))throw Error('Invalid app ID.');
-    if(!settings.apiUrl||!settings.bootstrapUrl)throw Error('Configure both Nuttyinc server addresses in Settings.');
+    await connected();
     active=new AbortController();
     try {
       progress({stage:'bootstrap'});
@@ -85,6 +92,7 @@ async function main() {
   handle('publish:submit',async(fields,token)=>{
     if(publishing)throw Error('A submission is already running.');
     if(!selected)throw Error('Choose your complete app folder first.');
+    await connected();
     await request(settings.apiUrl,'/api/auth/me');
     publishing=true;
     try{return await publishApp(selected,fields,token,message=>progress({stage:'publishing',message}));}finally{publishing=false;token='';}
@@ -96,5 +104,6 @@ async function main() {
   });
   await window.loadURL(documentUrl);
 }
-app.whenReady().then(main);
+if(hasLock)app.whenReady().then(main).catch(error=>{dialog.showErrorBox('download.net could not start',error.message);app.quit();});
+app.on('before-quit',event=>{if(backend&&!quitting){event.preventDefault();quitting=true;active?.abort();backend.stop().finally(()=>app.quit());}else{quitting=true;}});
 app.on('window-all-closed',()=>{active?.abort();app.quit();});

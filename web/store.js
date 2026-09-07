@@ -41,7 +41,7 @@ async function loadCatalog(){
   }
   if(!Array.isArray(data.apps))throw Error('Invalid catalog response.');
   apps=data.apps.filter(a=>a&&typeof a.name==='string'&&typeof a.id==='string'&&typeof a.description==='string'&&Number.isFinite(a.size));renderCatalog();
- }catch(e){apps=[];$('#catalog').innerHTML=`<div class="empty"><div class="app-icon">◈</div><h3>The catalog is waiting for a connection.</h3><p>${escapeHtml(e.message)}</p><button id="retry-catalog">Try again</button> <button id="connect-settings">${desktop?'Connect server':'Publish an app'}</button></div>`;$('#retry-catalog').onclick=loadCatalog;$('#connect-settings').onclick=()=>view(desktop?'settings':'publish');}
+ }catch(e){apps=[];$('#catalog').innerHTML=`<div class="empty"><div class="app-icon">◈</div><h3>The catalog is waiting for a connection.</h3><p>${escapeHtml(e.message)}</p><button id="retry-catalog">Try again</button> <button id="connect-settings">${desktop?'Connection status':'Publish an app'}</button></div>`;$('#retry-catalog').onclick=loadCatalog;$('#connect-settings').onclick=()=>view(desktop?'settings':'publish');}
 }
 async function refreshAccount(){try{account=await api('/api/auth/me');}catch{account=null;}$('#account-button').textContent=account?account.name:'Sign in ↗';$('#signed-in').hidden=!account;$('#auth-container').hidden=!!account;if(account){$('#account-name').textContent=`${account.name} · ${account.email}`;$('#auth-heading').textContent='You’re signed in.';}}
 async function download(id){
@@ -60,7 +60,6 @@ document.querySelectorAll('[data-auth]').forEach(el=>el.onclick=()=>{authMode=el
 $('#auth-form').onsubmit=async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target));$('#auth-submit').disabled=true;message('#auth-status','Connecting…');try{account=await api(`/api/auth/${authMode}`,data);e.target.reset();await refreshAccount();toast(authMode==='signup'?'Your Nuttyinc account is ready.':'Welcome back.');view('publish');}catch(err){message('#auth-status',err.message,true);}finally{$('#auth-submit').disabled=false;}};
 $('#logout').onclick=async()=>{try{await api('/api/auth/logout',{});account=null;await refreshAccount();$('#auth-heading').textContent='Welcome back.';}catch(e){toast(e.message);}};
 $('#choose-install-folder').onclick=async()=>{if(!desktop){toast('Choose your Programs folder in the Windows launcher.');return;}try{const path=await window.nutty.chooseInstallFolder();if(path){$('#install-root').value=path;message('#settings-status','Installation folder saved.');}}catch(e){message('#settings-status',e.message,true);}};
-$('#settings-form').onsubmit=async e=>{e.preventDefault();if(!desktop){message('#settings-status','Set the server address in the Windows launcher. This website uses its own Aspire backend.',true);return;}try{await window.nutty.configure(Object.fromEntries(new FormData(e.target)));message('#settings-status','Connection saved.');await refreshAccount();await loadCatalog();}catch(err){message('#settings-status',err.message,true);}};
 $('#choose-folder').onclick=async()=>{if(!desktop){toast('Folder publishing is available in the Windows launcher.');return;}try{const choice=await window.nutty.chooseFolder();if(choice){selectedFile=choice;$('#selected-file').textContent=`${selectedFile.name} · ${selectedFile.fileCount} files · ${(selectedFile.size/1024/1024).toFixed(1)} MB`;$('#file-hash').textContent='All files and subfolders will be packaged together. Review this folder before publishing.';}}catch(e){toast(e.message);}};
 $('#publish-form').onsubmit=async e=>{
  e.preventDefault();if(!desktop){toast('Use the Windows launcher to publish an app folder.');return;}if(!account){view('account');return;}if(!selectedFile){toast('Choose an app folder first.');return;}
@@ -69,8 +68,10 @@ $('#publish-form').onsubmit=async e=>{
 };
 $('#cancel-download').onclick=()=>window.nutty?.cancel();$('#reveal-download').onclick=()=>window.nutty?.reveal();
 if(desktop){
+ $('#account-description').textContent='Sign in with the Nuttyinc account stored on this PC to publish your apps and games.';
  window.nutty.onProgress(p=>{if(p.stage==='publishing'){message('#publish-status',p.message);return;}const order=['bootstrap','verification','aspire','downloading','installing','complete'];if(p.stage==='downloaded'){message('#download-status','Package verified. Preparing all files…');return;}const step=order.indexOf(p.stage);document.querySelectorAll('.step').forEach((el,i)=>{el.classList.toggle('active',i===step);el.classList.toggle('done',i<step);});const labels={bootstrap:'Connecting to Nuttyinc Bootstrap…',verification:'Verifying the signed bootstrap ticket…',aspire:'Fetching the reviewed app from the Aspire website…',downloading:'Downloading with Node.js…',installing:'Verifying and installing every file…',complete:p.cached?'App folder already installed and verified.':'All files installed.'};message('#download-status',(p.stage==='complete'&&p.cached?labels.complete:window.nuttyFlow?.labels?.[p.stage])||labels[p.stage]||p.stage);if(p.total){$('#download-progress').value=p.bytes/p.total*100;if(['downloading','installing'].includes(p.stage))message('#download-status',`${(p.bytes/1024/1024).toFixed(1)} / ${(p.total/1024/1024).toFixed(1)} MB`);}});
- window.nutty.settings().then(s=>{for(const key of ['apiUrl','bootstrapUrl'])$(`#settings-form [name=${key}]`).value=s[key]||'';$('#install-root').value=s.installRoot||'';if(!s.apiUrl)view('settings');});
+ window.nutty.settings().then(s=>{ $('#install-root').value=s.installRoot||'';$('#app-version').textContent=`WINDOWS / V${s.version}`;message('#connection-status',s.connected?'Connected automatically. Nuttyinc is running on this PC.':s.connectionError||'Nuttyinc could not start.',!s.connected);}).catch(e=>message('#connection-status',e.message,true));
+ window.nutty.onConnectionError(text=>{message('#connection-status',text,true);toast(text);});
  document.addEventListener('click',e=>{const a=e.target.closest('a');if(a?.href.startsWith('https://')){e.preventDefault();window.nutty.openLink(a.href).catch(err=>toast(err.message));}else if(a&&/\/(conduct|contributing|license)\.html$/.test(a.href)){e.preventDefault();openPolicy(a.href.includes('conduct')?'conduct':a.href.includes('contributing')?'contributing':'license');}else if(a&&a.getAttribute('href')==='index.html'){e.preventDefault();view('discover');}});
 }
 const policies={
@@ -87,5 +88,5 @@ function startHold(){if($('#policy-hold').disabled||holdStart)return;holdStart=p
 $('#policy-hold').onpointerdown=e=>{if(e.button!==0)return;e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);startHold();};
 for(const name of ['pointerup','pointercancel','lostpointercapture','blur'])$('#policy-hold').addEventListener(name,cancelHold);
 $('#policy-hold').onkeydown=e=>{if([' ','Enter'].includes(e.key)){e.preventDefault();if(!e.repeat)startHold();}};$('#policy-hold').onkeyup=cancelHold;window.addEventListener('blur',cancelHold);
+if(!desktop)message('#connection-status','The Windows launcher starts Nuttyinc automatically. This website connects to its own hosted backend.');
 loadCatalog();refreshAccount();
-

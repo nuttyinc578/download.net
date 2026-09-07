@@ -1,6 +1,6 @@
 {
   "name": "download-net-launcher",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Nuttyinc's community app and game store for Windows",
   "author": "Nuttyinc",
   "license": "MIT",
@@ -11,11 +11,14 @@
     "dev": "node scripts/dev.mjs",
     "test": "node --test tests/*.test.mjs",
     "build:web": "node scripts/build-web.mjs",
-    "build:desktop": "npm run build:folder",
+    "build:desktop": "npm run build:web && npm run build:runtime && npm run build:installer",
     "build:services": "dotnet build services/Api/Api.csproj -c Release",
     "publish:catalog": "node scripts/catalog.mjs",
     "build:folder": "electron-builder --win --x64 --dir",
-    "build:package": "node scripts/vfdn.mjs build"
+    "build:package": "node scripts/vfdn.mjs build",
+    "build:runtime": "node scripts/build-runtime.mjs",
+    "build:installer": "electron-builder --win nsis --x64 --publish never",
+    "verify:runtime": "node scripts/verify-runtime.mjs"
   },
   "devDependencies": {
     "electron": "^42.0.0",
@@ -52,9 +55,20 @@
       "license": "LICENSE",
       "include": "installer/custom.nsh",
       "installerSidebar": "installer/sidebar.bmp",
-      "uninstallerSidebar": "installer/sidebar.bmp"
+      "uninstallerSidebar": "installer/sidebar.bmp",
+      "runAfterFinish": true
     },
-    "compression": "store"
+    "compression": "store",
+    "extraResources": [
+      {
+        "from": "artifacts/runtime",
+        "to": "runtime"
+      },
+      {
+        "from": "web",
+        "to": "web"
+      }
+    ]
   },
   "bin": {
     "vnedfordownloaddotnet": "scripts/vfdn.mjs"

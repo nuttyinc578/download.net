@@ -1,13 +1,21 @@
 # Hosting and review setup
 
-## Public Nuttyinc services
+## Automatic desktop backend
+
+Version 1.0.1 bundles the Windows x64 .NET API runtime and Go Bootstrap under `resources/runtime`. The launcher starts these files itself, listens only on 127.0.0.1 with automatically allocated ports, and verifies a fresh signed bootstrap ticket before using either service. No manual connection settings are required. Closing the launcher closes the child processes; stdin EOF also shuts them down if the launcher exits unexpectedly.
+
+The account database and catalog cache live in the launcher’s user-data directory under `backend`, outside the installation folder, so normal updates preserve them. One launcher instance runs per Windows user. Accounts are local to this PC. The approved catalog still comes from GitHub, and metadata moderation still requires a configured provider.
+
+For runtime changes, run `npm run build:runtime` and `npm run verify:runtime`; the check starts the real binaries and verifies account creation, authentication, logout, persistence across restart, and process shutdown. CI repeats it against the packaged resources and extracts the installer to compare all installed files with this build.
+
+## Optional public Nuttyinc services
 
 GitHub Pages can host the static download page, but it cannot run .NET Aspire, Node.js servers, Go services, or account storage. Host the C# website/API and Go Bootstrap on a server under your control. `compose.yaml` builds both services; `docs/Caddyfile.example` shows HTTPS reverse-proxy configuration.
 
 1. Point two DNS names to your server, one for the API/website and one for Bootstrap.
 2. Set `BOOTSTRAP_SECRET` to the same random value on both services (at least 32 bytes). Set `NUTTY_API_URL` to the public HTTPS API origin.
 3. Run `docker compose up --build -d`, then configure the HTTPS proxy. The container ports bind to host loopback by default.
-4. Configure both public origins in the launcher. Test registration, sign-in, bootstrap verification, and an approved download before announcing the service.
+4. Test registration, sign-in, bootstrap verification, and the reviewed catalog on the hosted website before announcing the service. The desktop release currently uses its bundled local backend; it does not expose a manual remote-server form.
 5. Back up the `nutty-data` volume and restrict access. Use one API replica with this local JSON account store. Before larger-scale operation, replace it with a managed database, shared sessions, email verification, account recovery, and operational monitoring.
 
 The current account implementation provides PBKDF2-SHA256 with individual salts, 600,000 iterations, random server-side sessions, HttpOnly SameSite=Strict cookies, authentication rate limiting, and atomic account writes. Cookies are secure in production. There is no email delivery, password reset, or email ownership verification in this initial version. Sessions end on process restart. Do not expose the development server or use the local HTTP settings for public deployment.
@@ -15,10 +23,10 @@ The current account implementation provides PBKDF2-SHA256 with individual salts,
 ## GitHub Pages and release
 
 - Enable GitHub Pages with **GitHub Actions** as its source.
-- Push this implementation to `main`; `pages.yml` publishes the landing page and `nightly.yml` builds the complete Windows app folder ZIP.
+- Push this implementation to `main`; `pages.yml` publishes the landing page and `nightly.yml` builds the complete Windows installer and app folder ZIP, including both backend services.
 - The main Download now button links to the permanent v1.0 release asset and does not depend on the GitHub API or nightly.link being available.
 - The nightly URL points to the latest successful main-branch artifact, named `download.net-launcher-v1`. Artifacts expire after 30 days; run the workflow again to refresh it.
-- Push tag `v1.0` when you are ready to publish. The workflow creates a release named **download.net launcher v1**, attaches the app folder ZIP, and includes the nightly.link URL.
+- Push a version tag such as `v1.0.1` with matching package version and `docs/RELEASE-v1.0.1.md`. The workflow creates the tagged release with setup, the complete app folder ZIP, and SHA-256 checksums. Keep old release tags immutable.
 - If nightly.link reports that this public repository cannot be found, install the [nightly.link GitHub App](https://github.com/apps/nightly-link) for this repository with read-only Actions and metadata access, as recommended by [nightly.link](https://nightly.link/), then recheck the link. Public downloads do not require visitors to install the app. The tagged release remains the fallback.
 - Workflow write permissions must allow releases and Pages. Configure branch rules before allowing external contributions.
 
@@ -52,4 +60,3 @@ The accompanying Sites URL is a hosted website preview. It includes the static s
 
 
 For local development, set CATALOG_FILE to an absolute local approved-catalog JSON file and ASPNETCORE_ENVIRONMENT to Development. The same catalog validation applies. Production ignores CATALOG_FILE and fetches the reviewed GitHub catalog.
-

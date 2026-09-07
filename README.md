@@ -18,13 +18,16 @@ npm run dev
 
 Open http://127.0.0.1:5080 for the Aspire-compatible website and account system. The developer script starts the C# website and Go bootstrap with a shared ephemeral secret. Account records persist in the ignored `data/` directory. Sessions live in memory and expire after seven days or a server restart.
 
-In another terminal:
+The installed Windows launcher includes its own backend. It starts the .NET API and Go Bootstrap automatically on private loopback ports, verifies their connection, and stops both services on exit. Accounts and cache persist under the launcher’s user-data directory. These accounts belong to this PC; they are not a shared hosted identity. The manual server-address form and Save connection button have been removed.
+
+To run Electron from source, first build the Windows service binaries:
 
 ```sh
+npm run build:runtime
 npm start
 ```
 
-In the launcher’s Settings, enter `http://127.0.0.1:5080` as the API and `http://127.0.0.1:5090` as Bootstrap. Create a Nuttyinc account to publish. Downloads do not require an account. No third-party executable is automatically run.
+Create a local Nuttyinc account to publish. Downloads do not require an account. No downloaded third-party executable is automatically run.
 
 ## Run with .NET Aspire
 
@@ -40,7 +43,7 @@ The AppHost orchestrates the C# website and the Go Bootstrap service with servic
 
 ## Build the complete launcher folder
 
-Run npm run build:web, then npm run build:desktop. The Windows x64 app folder is written to artifacts/win-unpacked. Keep every file together and open download.net.exe. The nightly workflow distributes the whole folder as a ZIP.
+Run `npm run build:desktop` on Windows. It builds the website, publishes the self-contained .NET API, compiles Go Bootstrap, and creates the custom NSIS installer plus `artifacts/win-unpacked`. The installer includes all runtime files; users do not need Node.js, Go, or a .NET SDK. For portable use, keep every file together and open download.net.exe. CI verifies the actual installer payload against the current source and tests account persistence with the packaged services before publishing setup and the folder ZIP.
 
 ## Package your own app folder
 
@@ -83,6 +86,3 @@ node scripts/validate-catalog.mjs
 ```
 
 Tests exercise real account signup/login/logout, password hashing, bootstrap signatures and replay rejection, manifest validation, verified cache reuse, corrupted/truncated/oversized/cancelled downloads, redirect restrictions, Windows PE validation, whole-folder round trips, unsafe paths and junctions, cancelled extraction, deterministic builds, and preservation of existing installations.
-
-
-

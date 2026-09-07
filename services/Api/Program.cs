@@ -6,6 +6,8 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+var desktopMode = Environment.GetEnvironmentVariable("NUTTY_DESKTOP") == "1";
+if (desktopMode) builder.WebHost.UseUrls("http://127.0.0.1:0");
 builder.Services.AddRateLimiter(o => {
     o.RejectionStatusCode = 429;
     o.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new() { PermitLimit = 12, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
@@ -72,7 +74,7 @@ void SetSession(HttpContext ctx, Account account) {
     foreach (var old in sessions.Where(s => s.Value.Expires < DateTimeOffset.UtcNow).ToArray()) sessions.TryRemove(old.Key, out _);
     var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
     sessions[SessionKey(token)] = new(account.Name, account.Email, DateTimeOffset.UtcNow.AddDays(7));
-    ctx.Response.Cookies.Append("nutty_session", token, new CookieOptions { HttpOnly = true, Secure = ctx.Request.IsHttps || !app.Environment.IsDevelopment(), SameSite = SameSiteMode.Strict, MaxAge = TimeSpan.FromDays(7), Path = "/" });
+    ctx.Response.Cookies.Append("nutty_session", token, new CookieOptions { HttpOnly = true, Secure = ctx.Request.IsHttps || (!app.Environment.IsDevelopment() && !desktopMode), SameSite = SameSiteMode.Strict, MaxAge = TimeSpan.FromDays(7), Path = "/" });
 }
 app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "nuttyinc-aspire-api" }));
 app.MapPost("/api/auth/signup", async (HttpContext ctx, Credentials input) => {
@@ -124,6 +126,10 @@ app.MapGet("/api/apps/{id}/download", async (string id) => {
     try { var item = (await Catalog()).SingleOrDefault(m => m.Id == id); return item is null ? Results.NotFound(new { error = "App not found." }) : Results.Ok(item); }
     catch { return Results.Json(new { error = "Catalog unavailable." }, statusCode: 503); }
 });
+if (desktopMode) {
+    app.Lifetime.ApplicationStarted.Register(() => Console.WriteLine("NUTTYINC_READY " + JsonSerializer.Serialize(new { protocol = 1, url = app.Urls.Single() })));
+    _ = Task.Run(async () => { await Console.In.ReadToEndAsync(); app.Lifetime.StopApplication(); });
+}
 app.Run();
 
 record Account(string Name, string Email, string Salt, string Hash);

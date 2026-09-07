@@ -6,8 +6,11 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -51,7 +54,24 @@ func main() {
 	if bind == "" {
 		bind = "127.0.0.1"
 	}
-	server := &http.Server{Addr: bind + ":" + port, Handler: mux, ReadHeaderTimeout: 5 * time.Second, WriteTimeout: 10 * time.Second, IdleTimeout: 30 * time.Second}
-	log.Printf("Nuttyinc bootstrap listening on %s", server.Addr)
-	log.Fatal(server.ListenAndServe())
+	desktopMode := os.Getenv("NUTTY_DESKTOP") == "1"
+	if desktopMode {
+		bind = "127.0.0.1"
+		port = "0"
+	}
+	server := &http.Server{Addr: net.JoinHostPort(bind, port), Handler: mux, ReadHeaderTimeout: 5 * time.Second, WriteTimeout: 10 * time.Second, IdleTimeout: 30 * time.Second}
+	listener, err := net.Listen("tcp", server.Addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if desktopMode {
+		ready, _ := json.Marshal(map[string]any{"protocol": 1, "url": "http://" + listener.Addr().String()})
+		fmt.Println("NUTTYINC_READY " + string(ready))
+		go func() { _, _ = io.Copy(io.Discard, os.Stdin); _ = server.Close() }()
+	} else {
+		log.Printf("Nuttyinc bootstrap listening on %s", listener.Addr())
+	}
+	if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Fatal(err)
+	}
 }
