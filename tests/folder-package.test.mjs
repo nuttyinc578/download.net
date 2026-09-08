@@ -109,3 +109,15 @@ test('verified Node download installs a complete folder from its reviewed catalo
  assert.equal(installed.fileCount,4);
 });
 
+
+ test('vfdn extract accepts download.net flags and installs every file with reviewed hash checks',async t=>{
+  const f=await fixture(t),built=await buildPackage(f.source,f.output);
+  const args=['extract','--vfnd',f.output,'-n','test-app','----method-download.net','-----plugin-download.net','--out',f.root,'--sha256',built.sha256];
+  const result=JSON.parse(execFileSync(process.execPath,[resolve('scripts/vfdn.mjs'),...args],{encoding:'utf8',windowsHide:true}));
+  for(const [name,value]of Object.entries(f.files))assert.deepEqual(await readFile(join(result.path,name)),value);
+  assert.throws(()=>execFileSync(process.execPath,[resolve('scripts/vfdn.mjs'),...args,'--plugin','untrusted'],{stdio:'pipe',windowsHide:true}),/Command failed/);
+  assert.throws(()=>execFileSync(process.execPath,[resolve('scripts/vfdn.mjs'),...args,'--sha256','0'.repeat(64)],{stdio:'pipe',windowsHide:true}),/Command failed/);
+  if(process.platform==='win32'){
+   const wrapped=JSON.parse(execFileSync('pwsh',['-NoProfile','-ExecutionPolicy','RemoteSigned','-File',resolve('vfdn.ps1'),...args],{encoding:'utf8',windowsHide:true}));assert.equal(wrapped.cached,true);
+  }
+ });

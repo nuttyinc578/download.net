@@ -1,0 +1,42 @@
+name: Publish verified catalog
+on:
+  push:
+    branches: [main]
+    paths: ['submissions/**', 'catalog/submissions/**', 'scripts/catalog.mjs', 'scripts/inspect-submission.mjs', 'shared/submissions.mjs', '.github/workflows/catalog.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: publish-catalog
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      # Main contains maintainer-approved submissions. Packages are treated only as data.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: javac --release 17 -d services/inspector/build services/inspector/ExeInspector.java
+      - name: Verify merged packages and update the catalog
+        env:
+          MODERATION_URL: ${{ secrets.MODERATION_URL }}
+          MODERATION_KEY: ${{ secrets.MODERATION_KEY }}
+        run: node scripts/catalog.mjs
+      - name: Commit verified catalog
+        run: |
+          if git diff --quiet -- catalog/apps.json; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add catalog/apps.json
+          git commit -m 'Publish verified app catalog'
+          git pull --rebase origin main
+          git push origin HEAD:main

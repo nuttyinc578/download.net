@@ -1,6 +1,6 @@
 {
   "name": "download-net-launcher",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Nuttyinc's community app and game store for Windows",
   "author": "Nuttyinc",
   "license": "MIT",
@@ -41,7 +41,8 @@
       "package.json",
       "scripts/vfdn.mjs",
       "vfdn.ps1",
-      "vnedfordownloaddotnet.cmd"
+      "vnedfordownloaddotnet.cmd",
+      "vfdn.cmd"
     ],
     "win": {
       "target": "nsis",
@@ -71,6 +72,7 @@
     ]
   },
   "bin": {
-    "vnedfordownloaddotnet": "scripts/vfdn.mjs"
+    "vnedfordownloaddotnet": "scripts/vfdn.mjs",
+    "vfdn": "scripts/vfdn.mjs"
   }
 }

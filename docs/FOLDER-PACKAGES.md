@@ -10,9 +10,13 @@ Install Node.js 22 or later. From the extracted source or builder directory:
 .\vfdn.ps1 build "C:\Builds\My App" -Output "C:\Builds\MyApp.vfdn"
 .\vnedfordownloaddotnet.cmd build "C:\Builds\My App" --out "C:\Builds\MyApp.vfdn"
 .\vfdn.ps1 inspect "C:\Builds\MyApp.vfdn"
+.\vfdn.cmd extract --vfnd "C:\Builds\MyApp.vfdn" -n my-app ----method-download.net -----plugin-download.net
+.\vfdn.ps1 extract --vfnd "C:\Builds\MyApp.vfdn" -n my-app ----method-download.net -----plugin-download.net -Output "C:\Programs"
 ~~~
 
-After npm link in the source checkout, the command is also available as vnedfordownloaddotnet build. If local PowerShell policy blocks scripts, use the .cmd command; no policy change is required.
+After npm link in the source checkout, the commands are also available as vnedfordownloaddotnet build and vfdn extract. If local PowerShell policy blocks scripts, use the .cmd command; no policy change is required.
+
+The extract command accepts both --vfnd (the requested spelling) and --vfdn. Pass -n with your app ID. The method and plugin flags select the bundled download.net extractor; downloaded scripts and plugins are never executed. Add --sha256 with the reviewed catalog hash to verify provenance as well as the internal file hashes. Without it, manual extraction verifies package structure and internal hashes only. The launcher always supplies the reviewed hash. Extraction defaults to the per-user Programs folder.
 
 The output must be outside the source folder and must not already exist. The builder includes every regular file, hidden filename, and empty directory. It does not apply ignore rules. Links, junctions, device names, alternate data streams, invalid Windows paths, and case-colliding paths are rejected explicitly. Keep the folder unchanged during the build. A file that changes while being copied fails verification.
 
@@ -20,7 +24,9 @@ The output must be outside the source folder and must not already exist. The bui
 
 In the desktop launcher, sign in, choose **Publish an app → Choose folder**, review the file count and total size, fill in the listing, and provide your GitHub token. Check the folder for private material before consenting: its entire contents are uploaded publicly as one .vfdn release asset. The app builds the package automatically and opens a review pull request. The separate build command produces the identical package format for local builds and inspection.
 
-After review, **Download** connects to Bootstrap, verifies the ticket, fetches the approved catalog manifest from Aspire, caches the package using Node.js, and verifies and installs every file.
+After a maintainer merges your manifest, the Publish verified catalog workflow verifies it and updates catalog/apps.json. New manifests are stored in catalog/submissions/; legacy submissions/ entries still work.
+
+Once listed, **Download** connects to Bootstrap, verifies the ticket, fetches the approved catalog manifest from Aspire, caches the package using Node.js, and verifies and installs every file.
 
 Default destination: %LOCALAPPDATA%\Programs\<app-id>-<first-16-characters-of-package-sha256>.
 

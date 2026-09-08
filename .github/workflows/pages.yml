@@ -2,7 +2,7 @@ name: GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ['web/**', 'scripts/build-web.mjs', 'CODE_OF_CONDUCT.md', 'CONTRIBUTING.md', 'LICENSE', '.github/workflows/pages.yml']
+    paths: ['web/**', 'scripts/build-web.mjs', 'scripts/conduct-source.mjs', 'CODE_OF_CONDUCT.md', 'CONTRIBUTING.md', 'LICENSE', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read

@@ -10,7 +10,8 @@ async function main() {
   const { trustedService } = await import('../shared/manifest.mjs');
   const { downloadVerified } = await import('./download.mjs');
   const { publishApp } = await import('./publish.mjs');
-  const {scanFolder,installPackage,safeDirectory}=await import('../shared/folder-package.mjs');
+  const {scanFolder,safeDirectory}=await import('../shared/folder-package.mjs');
+  const {extractVfdn}=await import('../shared/vfdn-extract.mjs');
   const defaultInstallRoot=join(process.env.LOCALAPPDATA||app.getPath('appData'),'Programs');
   const configFile=join(app.getPath('userData'),'settings.json');
   settings={installRoot:defaultInstallRoot};
@@ -74,7 +75,7 @@ async function main() {
       if(manifest.id!==id)throw Error('Server returned the wrong app.');
       const destination=join(app.getPath('userData'),'package-cache');
       const file=await downloadVerified(manifest,destination,{signal:active.signal,progress});
-      const installed=await installPackage(file,settings.installRoot,{id:manifest.id,expectedSha256:manifest.sha256,signal:active.signal,progress});
+      const installed=await extractVfdn(file,{root:settings.installRoot,method:'download.net',plugin:'download.net',id:manifest.id,expectedSha256:manifest.sha256,signal:active.signal,progress});
       lastDownload=installed.path;
       return {name:manifest.name,...installed};
     } finally { active=null; }
@@ -99,7 +100,7 @@ async function main() {
   });
   handle('open-link',async value=>{
     const u=new URL(value);
-    if(u.protocol!=='https:'||u.username||u.password||!['github.com','nuttyinc578.github.io','nightly.link'].includes(u.hostname))throw Error('Link is not allowed.');
+    if(u.protocol!=='https:'||u.username||u.password||!['github.com','nuttyinc578.github.io','nightly.link','www.contributor-covenant.org','contributor-covenant.org','creativecommons.org'].includes(u.hostname))throw Error('Link is not allowed.');
     await shell.openExternal(u.href);
   });
   await window.loadURL(documentUrl);

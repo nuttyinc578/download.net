@@ -30,29 +30,25 @@ The current account implementation provides PBKDF2-SHA256 with individual salts,
 - If nightly.link reports that this public repository cannot be found, install the [nightly.link GitHub App](https://github.com/apps/nightly-link) for this repository with read-only Actions and metadata access, as recommended by [nightly.link](https://nightly.link/), then recheck the link. Public downloads do not require visitors to install the app. The tagged release remains the fallback.
 - Workflow write permissions must allow releases and Pages. Configure branch rules before allowing external contributions.
 
-## Moderation is a required review process
+## Catalog publication after merge
 
-Create an environment named `moderation`, restrict deployment to the main branch, and require a trusted maintainer to approve runs. Add `MODERATION_URL` and `MODERATION_KEY` to that environment’s secrets. The HTTPS endpoint receives listing text, category, publisher, and license, and must return:
+A maintainer approves publication by merging a submission into main. The **Publish verified catalog** workflow reads catalog/submissions/ and legacy submissions/, selects the most recently merged manifest per app ID, downloads the package, verifies its full SHA-256 and every file, and inspects contained Windows executable headers without running them. It updates catalog/apps.json only when verification succeeds. Failed verification leaves the previous catalog intact; inspect the failed Actions run, correct the submission, and rerun the workflow.
 
-```json
-{"decision":"approve","reason":"The listing meets the configured text policy."}
-```
+The workflow runs automatically for merged submission changes and can also be run manually. It uses the repository Actions token to commit catalog/apps.json. Allow Actions write access to contents; if branch rules reject that bot commit, allow this catalog workflow or commit its verified output through a maintainer PR. The API and website read main/catalog/apps.json, never a contributor's fork catalog. The API cache refreshes after five minutes; reopening the launcher starts a fresh cache.
 
-Allowed decisions are `approve`, `review`, and `reject`. Errors, invalid responses, or missing credentials fail the review and leave the app pending. The adapter is provider-neutral; connect your own AI service. No live AI provider or secret is configured by this source package.
+Review distribution rights, publisher provenance, and the app's behavior before merging. Package verification establishes integrity and file structure; it is not an antivirus scan. Repository writers can also publish from a submission branch in the upstream repository, so the owner is never asked to fork their own repository. Other contributors reuse or create their own fork.
 
-Run **Review app submission** with a PR number. It checks out trusted main-branch code, fetches the single submission manifest as data from the exact PR commit, downloads the .vfdn package with hash and size checks, validates and extracts its file inventory into an isolated temporary directory, and uses Java to inspect every contained .exe without executing it. It then moderates the listing text. The report artifact binds the review to the PR head SHA and package hash. The workflow does not merge, comment, or change catalog permissions.
+### Optional AI listing moderation
 
-Before approval, inspect distribution rights, publisher provenance, dependency/installer behavior, antivirus results from your chosen scanner, and the AI report. Java structural validation and AI text review are not antivirus scans. Do not run submitted executable files on the review runner.
+No AI provider is configured. Per the maintainer's chosen policy, merge approval plus package verification is sufficient for publication. To add AI review to automatic publication, set MODERATION_URL and MODERATION_KEY as repository Actions secrets. The HTTPS endpoint must return JSON with decision (approve, review, or reject) and reason. Once either setting is present, both are required and moderation must succeed before listing changes are published. AI evaluates listing text, not executable safety.
 
-A maintainer creates `reviews/APP_ID-SHA256.json` with `decision`, `sha256`, `manifestSha256`, `reviewedBy`, `aiRunUrl`, and `inspectionRunUrl`. Copy `manifestSha256` from the successful moderation report; it binds the approval to all normalized listing fields, so later metadata edits require new review. Set `decision` to `approve` only after successful review. Merge the submission and approval through review, then run `npm run publish:catalog` and commit `catalog/apps.json`. No PR automatically becomes a live listing.
+The manual **Review app submission** workflow remains available for pre-merge inspection and AI moderation. Its environment-scoped secrets belong to the moderation environment; configure those separately if using that workflow. It reads a single manifest from the exact PR head as data and runs trusted main-branch tools. A manual review requires its AI provider; it does not automatically approve or merge a PR.
 
-Approval record example (replace every placeholder with verified values):
+Old reviews/ approval records are retained for history but are no longer required to populate the catalog. Protect main with required checks and code-owner review for catalog/, submissions/, scripts/, shared/, and workflows.
 
-```json
-{"decision":"approve","sha256":"THE_REVIEWED_SHA256","manifestSha256":"THE_REVIEWED_MANIFEST_SHA256","reviewedBy":"MAINTAINER_LOGIN","aiRunUrl":"https://github.com/nuttyinc578/download.net/actions/runs/RUN_ID","inspectionRunUrl":"https://github.com/nuttyinc578/download.net/actions/runs/RUN_ID"}
-```
+## Signup code of conduct
 
-Protect `main` with required checks and code-owner reviews. Require review of `/catalog/`, `/reviews/`, `/.github/`, `/scripts/`, and `/shared/` using the provided CODEOWNERS file. Dismiss stale reviews and prevent direct pushes and bypasses. These GitHub administration settings cannot be enforced by repository files alone. Until configured, public submissions must not be accepted as approved listings.
+New accounts must accept the project's Contributor Covenant 2.1 before creation. build:web derives the displayed text, JSON policy metadata, and API constants from CODE_OF_CONDUCT.md. Rebuild the website and API together after edits. Acceptance includes the exact normalized document hash, version, and server UTC timestamp in users.json. Existing accounts retain normal login and are not assigned invented acceptance records. The repository, app, and static website contain the same covenant; static GitHub Pages cannot create accounts by itself.
 
 ## Current deployment limits
 

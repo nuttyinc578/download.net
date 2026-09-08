@@ -14,7 +14,8 @@ test('backend account lifecycle and signed one-use bootstrap verification',async
  assert.equal((await (await fetch(origin+'/api/apps/folder-app/download')).json()).url,listing.url);
  const post=(path,body,cookie)=>fetch(origin+path,{method:'POST',headers:{'Content-Type':'application/json',...(cookie?{Cookie:cookie}:{})},body:JSON.stringify(body)});
  assert.equal((await post('/api/auth/signup',{name:'Test',email:'user@example.test',password:'short'})).status,400);
- const credentials={name:'Test User',email:'user@example.test',password:'Correct-long-passphrase-123!'};
+ const conduct=JSON.parse(await readFile('web/conduct.json','utf8'));
+ const credentials={acceptedCodeOfConduct:true,codeOfConductVersion:conduct.version,codeOfConductSha256:conduct.sha256,name:'Test User',email:'user@example.test',password:'Correct-long-passphrase-123!'};
  const signup=await post('/api/auth/signup',credentials);assert.equal(signup.status,200);const cookie=signup.headers.get('set-cookie').split(';')[0];assert.match(signup.headers.get('set-cookie'),/httponly/i);
  const me=await fetch(origin+'/api/auth/me',{headers:{Cookie:cookie}});assert.equal(me.status,200);assert.equal((await me.json()).email,credentials.email);
  assert.equal((await post('/api/auth/signup',credentials)).status,409);

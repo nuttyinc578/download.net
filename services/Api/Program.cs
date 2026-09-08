@@ -77,7 +77,9 @@ void SetSession(HttpContext ctx, Account account) {
     ctx.Response.Cookies.Append("nutty_session", token, new CookieOptions { HttpOnly = true, Secure = ctx.Request.IsHttps || (!app.Environment.IsDevelopment() && !desktopMode), SameSite = SameSiteMode.Strict, MaxAge = TimeSpan.FromDays(7), Path = "/" });
 }
 app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "nuttyinc-aspire-api" }));
-app.MapPost("/api/auth/signup", async (HttpContext ctx, Credentials input) => {
+app.MapPost("/api/auth/signup", async (HttpContext ctx, SignupCredentials input) => {
+    if (!input.AcceptedCodeOfConduct || input.CodeOfConductVersion != ConductPolicy.Version || input.CodeOfConductSha256 != ConductPolicy.Sha256)
+        return Results.BadRequest(new { error = "Read and accept Contributor Covenant " + ConductPolicy.Version + " before creating an account.", code = "conduct_acceptance_required", requiredVersion = ConductPolicy.Version });
     var email = (input.Email ?? "").Trim().ToLowerInvariant(); var name = (input.Name ?? "").Trim();
     if (email.Length > 254 || !System.Net.Mail.MailAddress.TryCreate(email, out var mail) || mail.Address != email || name.Length is < 2 or > 60 || input.Password is null || input.Password.Length is < 12 or > 128)
         return Results.BadRequest(new { error = "Use a valid email, a 2–60 character name, and a 12–128 character password." });
@@ -86,7 +88,7 @@ app.MapPost("/api/auth/signup", async (HttpContext ctx, Credentials input) => {
         if (users.Any(u => u.Email == email)) return Results.Conflict(new { error = "An account with that email already exists." });
         var salt = RandomNumberGenerator.GetBytes(16);
         var hash = Rfc2898DeriveBytes.Pbkdf2(input.Password, salt, 600_000, HashAlgorithmName.SHA256, 32);
-        var account = new Account(name, email, Convert.ToHexString(salt), Convert.ToHexString(hash));
+        var account = new Account(name, email, Convert.ToHexString(salt), Convert.ToHexString(hash), new ConductAcceptance(ConductPolicy.Version, ConductPolicy.Sha256, DateTimeOffset.UtcNow));
         var next = users.Append(account).ToList();
         await File.WriteAllTextAsync(usersFile + ".tmp", JsonSerializer.Serialize(next));
         File.Move(usersFile + ".tmp", usersFile, true); users = next;
@@ -132,7 +134,9 @@ if (desktopMode) {
 }
 app.Run();
 
-record Account(string Name, string Email, string Salt, string Hash);
+record Account(string Name, string Email, string Salt, string Hash, ConductAcceptance? CodeOfConduct = null);
+record ConductAcceptance(string Version, string Sha256, DateTimeOffset AcceptedAt);
+record SignupCredentials(string? Name, string? Email, string? Password, bool AcceptedCodeOfConduct = false, string? CodeOfConductVersion = null, string? CodeOfConductSha256 = null);
 record Session(string Name, string Email, DateTimeOffset Expires);
 record Credentials(string? Name, string? Email, string? Password);
 record Ticket(string Nonce, long Expires, string Signature);

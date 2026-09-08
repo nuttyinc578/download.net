@@ -14,11 +14,11 @@ Sign in to your Nuttyinc account in the launcher. Choose the complete built app 
 
 Your GitHub token
 
-Your token is used in memory to prepare your fork, create a public prerelease with the complete .vfdn folder package, and open a pull request in nuttyinc578/download.net. It must permit fork creation, release asset uploads, content commits, and pull requests. Revoke it through GitHub settings if you no longer need it.
+Your token is used in memory to prepare a submission branch (in your fork, or directly in the repository if you have write access), create a public prerelease with the complete .vfdn folder package, and open a pull request in nuttyinc578/download.net. It must permit fork creation, release asset uploads, content commits, and pull requests. Revoke it through GitHub settings if you no longer need it.
 
 Review and distribution
 
-Your pull request must pass manifest validation, folder verification and executable structure inspection, configured AI moderation, and human review. AI reviews listing text, not executable safety. Maintainers verify distribution rights and provenance before merging. Rejected submissions stay out of the catalog.
+A maintainer reviews your submission and merges it to approve publication. The catalog workflow verifies package and file hashes and checks executable structure before listing it. If an AI moderation provider is configured, its listing review must also pass. AI reviews text, not executable safety. Maintainers verify distribution rights and provenance before merging.
 
 Update an app
 

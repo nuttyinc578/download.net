@@ -27,7 +27,7 @@ npm run build:runtime
 npm start
 ```
 
-Create a local Nuttyinc account to publish. Downloads do not require an account. No downloaded third-party executable is automatically run.
+Create a local Nuttyinc account to publish. New accounts must read Contributor Covenant 2.1, scroll to the end, and hold to accept it. The API rejects missing or outdated acceptance and saves the policy version, SHA-256 fingerprint, and server timestamp. Existing accounts can still sign in. The same covenant is included in this repository, the app, and the website; its text uses CC BY 4.0, separately from the MIT software license. Downloads do not require an account. No downloaded third-party executable is automatically run.
 
 ## Run with .NET Aspire
 
@@ -55,15 +55,15 @@ Build your app with its normal compiler first. Include its executable, DLLs, ass
 2. It rejects an unexpected API origin and asks the C# API to verify the ticket. Reused and expired tickets are rejected.
 3. The launcher fetches the app manifest from the Aspire website’s reviewed GitHub catalog.
 4. Node.js streams the .vfdn folder package into its local cache. Redirects are restricted to GitHub release hosts, with limits on size and SHA-256 validation.
-5. After verifying the package hash, the launcher extracts all files into a temporary folder and verifies each file. Only a completely verified folder is moved to %LOCALAPPDATA%\Programs\<app-id>-<package-hash-prefix>. Settings lets you choose another writable Programs folder, such as C:\Programs. Failed or cancelled partials are discarded; existing downloads and installations are verified before reuse.
+5. After verifying the package hash, the launcher uses the bundled download.net VFDN extractor to extract all files into a temporary folder and verifies each file. Only a completely verified folder is moved to %LOCALAPPDATA%\Programs\<app-id>-<package-hash-prefix>. Settings lets you choose another writable Programs folder, such as C:\Programs. Failed or cancelled partials are discarded; existing downloads and installations are verified before reuse.
 
 SHA-256 verifies integrity, not malware safety. The launcher never starts a downloaded executable automatically. The API caches the reviewed catalog in memory for five minutes and writes a cache snapshot to disk. It fails closed when a new catalog fetch fails after expiry.
 
 ## Publishing apps
 
-The desktop form accepts a whole app folder, name, ID, version, category, description, license, and GitHub token. It detects all files, displays their count and total size, and builds the same .vfdn format as the command-line builder. It creates the user’s fork, uploads the package to a public GitHub prerelease, commits one catalog manifest, and opens a pull request in nuttyinc578/download.net. Every file in the selected folder becomes public. Package inspection verifies all file hashes; Java checks contained .exe files without executing them.
+The desktop form accepts a whole app folder, name, ID, version, category, description, license, and GitHub token. It detects all files, displays their count and total size, and builds the same .vfdn format as the command-line builder. It prepares a submission branch directly in nuttyinc578/download.net for users with write access, or reuses/creates a fork for other contributors. It uploads the package to a public GitHub prerelease, commits one manifest under catalog/submissions/, and opens a pull request. Each submission starts from the current upstream default branch. A maintainer merge approves publication; the catalog workflow verifies the package and each file before updating catalog/apps.json. Older submissions/ paths remain supported. Every file in the selected folder becomes public. Package inspection verifies all file hashes; Java checks contained .exe files without executing them.
 
-The token is kept in process memory only and cleared from the input immediately. It is not stored in settings, sent to Nuttyinc, or committed. It must authorize creating a fork, uploading release assets, writing fork contents, and opening an upstream PR. GitHub organization policies and token restrictions can still reject the request; the launcher surfaces that error. The uploaded release can remain if creating the PR later fails, and the launcher links it for cleanup.
+The token is kept in process memory only and cleared from the input immediately. It is not stored in settings, sent to Nuttyinc, or committed. It must authorize uploading release assets, writing submission contents, and opening a PR. Contributors without upstream write access also need a fork; an existing fork can be reused. GitHub organization policies and token restrictions can still reject the request; the launcher surfaces that error. The uploaded release can remain if creating the PR later fails, and the launcher links it for cleanup.
 
 See [Hosting and review setup](docs/OPERATIONS.md) before accepting public submissions.
 
