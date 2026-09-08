@@ -10,5 +10,17 @@
     "sha256": "6b1a3b8ebdd46ec4d09803bfa863084d5212473861973959c7d74a70847c64f7",
     "size": 98892410,
     "license": "mit"
+  },
+  {
+    "id": "the-cube-beta",
+    "name": "the cube beta",
+    "description": "play physics in a open sourse game",
+    "kind": "game",
+    "version": "v2.6.3",
+    "publisher": "nuttyinc578",
+    "url": "https://github.com/nuttyinc578/download.net/releases/download/app-the-cube-beta-f7d41d49/the-cube-beta.vfdn",
+    "sha256": "57f85aa714ec70899cd5238e1ce39428fe89eb9df0477e2786c81b53a5981930",
+    "size": 261780017,
+    "license": "MIT"
   }
 ]
