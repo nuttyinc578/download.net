@@ -77,9 +77,9 @@ async function main() {
   handle('download',async id=>{
     if(active)throw Error('A download is already running.');
     if(!/^[a-z0-9][a-z0-9-]{1,63}$/.test(id))throw Error('Invalid app ID.');
-    await connected();
     active=new AbortController();
     try {
+      await connected();
       progress({stage:'bootstrap'});
       const handshake=await request(settings.bootstrapUrl,'/v1/bootstrap',undefined,false);
       if(handshake.protocol!==1||trustedService(handshake.apiUrl)!==trustedService(settings.apiUrl))throw Error('Bootstrap returned an unexpected Nuttyinc server.');
@@ -110,10 +110,8 @@ async function main() {
   handle('publish:submit',async(fields,token)=>{
     if(publishing)throw Error('A submission is already running.');
     if(!selected)throw Error('Choose your complete app folder first.');
-    await connected();
-    await request(settings.apiUrl,'/api/auth/me');
     publishing=true;
-    try{return await publishApp(selected,fields,token,message=>progress({stage:'publishing',message}));}finally{publishing=false;token='';}
+    try{await connected();await request(settings.apiUrl,'/api/auth/me');return await publishApp(selected,fields,token,message=>progress({stage:'publishing',message}));}finally{publishing=false;token='';}
   });
   handle('open-link',async value=>{
     const u=new URL(value);
