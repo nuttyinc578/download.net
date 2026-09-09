@@ -12,6 +12,18 @@
     "license": "mit"
   },
   {
+    "id": "pnb-conect-offical",
+    "name": "pnb connect manger",
+    "description": "chat with friends fammily in an encrpted env",
+    "kind": "app",
+    "version": "2.9.3",
+    "publisher": "nuttyinc578",
+    "url": "https://github.com/nuttyinc578/download.net/releases/download/app-pnb-conect-offical-139edcaa/pnb-conect-offical.vfdn",
+    "sha256": "f2e2d593b06e76ff63b860a12d60f27cd0f260eaa4e5d54605b4b68b13620abe",
+    "size": 342560478,
+    "license": "MIT"
+  },
+  {
     "id": "the-cube-beta",
     "name": "the cube beta",
     "description": "play physics in a open sourse game",
