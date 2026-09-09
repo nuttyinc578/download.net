@@ -45,6 +45,8 @@ jobs:
         timeout-minutes: 5
         shell: pwsh
         run: |
+          node node_modules/electron/install.js
+          if ($LASTEXITCODE -ne 0) { throw 'Could not prepare the Electron test runtime.' }
           $env:ELECTRON_RUN_AS_NODE=$null
           $check=Start-Process -FilePath (Resolve-Path node_modules/electron/dist/electron.exe).Path -ArgumentList 'scripts/verify-updater.cjs' -WorkingDirectory $PWD.Path -WindowStyle Hidden -Wait -PassThru
           Get-Content artifacts/updater-smoke-result.json
