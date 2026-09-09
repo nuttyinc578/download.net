@@ -1,7 +1,7 @@
 const $=s=>document.querySelector(s);
 const desktop=!!window.nutty;
 let apps=[],kind='all',authMode='login',account=null,current='discover',selectedFile=null,downloadBusy=false;
-const titles={discover:'Discover',apps:'Apps',games:'Games',downloads:'Downloads',publish:'Publish an app',settings:'Settings',account:'Nuttyinc account',policy:'Community'};
+const titles={discover:'Discover',apps:'Apps',games:'Games',downloads:'Downloads',updates:'Updates',publish:'Publish an app',settings:'Settings',account:'Nuttyinc account',policy:'Community'};
 const escapeHtml=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function toast(message){$('#toast').textContent=message;$('#toast').hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').hidden=true,7000);}
 function message(selector,text,error=false){const el=$(selector);el.textContent=text;el.classList.toggle('error',error);}
@@ -74,7 +74,25 @@ $('#publish-form').onsubmit=async e=>{
  try{const result=await window.nutty.publish(fields,token);const el=$('#publish-status');el.textContent='Pull request created. ';const a=document.createElement('a');a.href=result.url;a.textContent=`Open review #${result.number} ↗`;a.className='text-link';el.append(a);toast('Your app is waiting for review.');}catch(err){message('#publish-status',err.message,true);}finally{token='';$('#github-token').value='';$('#publish-submit').disabled=false;}
 };
 $('#cancel-download').onclick=()=>window.nutty?.cancel();$('#reveal-download').onclick=()=>window.nutty?.reveal();
+function renderUpdate(state){
+ const managed=state.mode==='installed';
+ $('#update-current').textContent=state.currentVersion;$('#update-latest').textContent=state.latestVersion||'Not checked';
+ $('#updates-description').textContent=managed?'New stable releases download automatically and install when you close download.net.':'Use Windows setup to enable automatic updates. Portable editions can check for new releases here.';
+ const labels={idle:'Ready to check for a new release.',checking:'Checking GitHub for a new stable release…',available:managed?'A new release is available. Starting the download…':'A new release is available. Open the release page and install setup to enable automatic updates.',current:'You’re running the latest stable version.',downloading:'Downloading the launcher update…',ready:'Update downloaded and verified. Restart now, or close download.net to install it.',installing:'Stopping Nuttyinc and restarting to install the update…',unsupported:'Install download.net using Windows setup to enable automatic updates.',error:state.error};
+ message('#update-status',labels[state.phase]||state.phase,state.phase==='error');
+ $('#check-updates').disabled=['checking','downloading','ready','installing','unsupported'].includes(state.phase);
+ $('#install-update').hidden=!managed||state.phase!=='ready';
+ $('#update-progress').hidden=!['downloading','ready'].includes(state.phase);$('#update-progress').value=state.percent||0;
+ $('#update-bytes').hidden=state.phase!=='downloading';$('#update-bytes').textContent=(state.transferred/1024/1024).toFixed(1)+' / '+(state.total/1024/1024).toFixed(1)+' MB';
+ $('#update-last-checked').textContent=state.lastChecked?'Last checked '+new Date(state.lastChecked).toLocaleString()+'. Checks every 6 hours.':'Checks at startup and every 6 hours while the launcher is open.';
+ $('#update-notes').textContent=state.notes||'';$('#update-notes-box').hidden=!state.notes;
+ $('#update-badge').hidden=!['available','downloading','ready'].includes(state.phase);
+}
+$('#check-updates').onclick=async()=>{try{renderUpdate(await window.nutty.checkUpdates());}catch(error){message('#update-status',error.message,true);}};
+$('#install-update').onclick=async()=>{try{renderUpdate(await window.nutty.installUpdate());}catch(error){message('#update-status',error.message,true);}};
 if(desktop){
+ window.nutty.onUpdate(renderUpdate);
+ window.nutty.updateState().then(renderUpdate).catch(e=>message('#update-status',e.message,true));
  $('#account-description').textContent='Sign in with the Nuttyinc account stored on this PC to publish your apps and games.';
  window.nutty.onProgress(p=>{if(p.stage==='publishing'){message('#publish-status',p.message);return;}const order=['bootstrap','verification','aspire','downloading','installing','complete'];if(p.stage==='downloaded'){message('#download-status','Package verified. Preparing all files…');return;}const step=order.indexOf(p.stage);document.querySelectorAll('.step').forEach((el,i)=>{el.classList.toggle('active',i===step);el.classList.toggle('done',i<step);});const labels={bootstrap:'Connecting to Nuttyinc Bootstrap…',verification:'Verifying the signed bootstrap ticket…',aspire:'Fetching the reviewed app from the Aspire website…',downloading:'Downloading with Node.js…',installing:'Verifying and installing every file…',complete:p.cached?'App folder already installed and verified.':'All files installed.'};message('#download-status',(p.stage==='complete'&&p.cached?labels.complete:window.nuttyFlow?.labels?.[p.stage])||labels[p.stage]||p.stage);if(p.total){$('#download-progress').value=p.bytes/p.total*100;if(['downloading','installing'].includes(p.stage))message('#download-status',`${(p.bytes/1024/1024).toFixed(1)} / ${(p.total/1024/1024).toFixed(1)} MB`);}});
  window.nutty.settings().then(s=>{ $('#install-root').value=s.installRoot||'';$('#app-version').textContent=`WINDOWS / V${s.version}`;message('#connection-status',s.connected?'Connected automatically. Nuttyinc is running on this PC.':s.connectionError||'Nuttyinc could not start.',!s.connected);}).catch(e=>message('#connection-status',e.message,true));
@@ -97,5 +115,6 @@ function startHold(){if($('#policy-hold').disabled||holdStart||current!=='policy
 $('#policy-hold').onpointerdown=e=>{if(e.button!==0)return;e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);startHold();};
 for(const name of ['pointerup','pointercancel','lostpointercapture','blur'])$('#policy-hold').addEventListener(name,cancelHold);
 $('#policy-hold').onkeydown=e=>{if([' ','Enter'].includes(e.key)){e.preventDefault();if(!e.repeat)startHold();}};$('#policy-hold').onkeyup=cancelHold;window.addEventListener('blur',cancelHold);
+if(!desktop){$('#updates-description').textContent='Install the Windows launcher to receive automatic updates. This website always shows its published version.';$('#update-current').textContent='Website';$('#update-latest').textContent='View release';$('#check-updates').disabled=true;message('#update-status','Launcher updates are available inside the Windows app.');}
 if(!desktop)message('#connection-status','The Windows launcher starts Nuttyinc automatically. This website connects to its own hosted backend.');
 loadCatalog();refreshAccount();

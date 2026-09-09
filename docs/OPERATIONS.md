@@ -56,3 +56,11 @@ The accompanying Sites URL is a hosted website preview. It includes the static s
 
 
 For local development, set CATALOG_FILE to an absolute local approved-catalog JSON file and ASPNETCORE_ENVIRONMENT to Development. The same catalog validation applies. Production ignores CATALOG_FILE and fetches the reviewed GitHub catalog.
+
+## Automatic launcher updates
+
+The Updates tab uses electron-updater 6.8.9 with the public nuttyinc578/download.net GitHub release feed. Installations made by the Windows setup check at startup and every six hours. Stable, higher versions download automatically and install on normal app exit, or with Restart and update. The latter waits until transfers finish and stops the local backend before running setup. Portable copies only check and notify.
+
+Every future release must increment package.json and package-lock.json, add matching release notes, and use a new immutable version tag. The build generates and verifies latest.yml with the installer filename, size, and SHA-512, and publishes the .exe.blockmap alongside setup. Do not upload a new installer without matching metadata. App submission prereleases are excluded. The channel does not consume nightly.link artifacts.
+
+CI verifies the actual installer payload, updater dependency and GitHub configuration, metadata hash, backend account persistence, and regression tests before publishing. No updater token is distributed to users. Existing builds have no Authenticode certificate; integrity relies on GitHub HTTPS and release SHA-512 metadata. Signing can be added later with the normal electron-builder certificate configuration.

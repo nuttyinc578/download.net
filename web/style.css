@@ -4,3 +4,5 @@
 .spotlight-eyebrow{color:inherit}
 
 #signup-conduct{border:1px solid var(--line);border-radius:9px;padding:18px;margin:20px 0}#read-signup-conduct{width:100%;margin-bottom:18px}#signup-conduct-status{display:block;color:var(--muted);line-height:1.5}.policy-pane h2,.policy-pane h3{color:var(--text)}.policy-pane li{margin-bottom:10px}.policy-pane a{overflow-wrap:anywhere}
+
+.update-card{max-width:850px}.update-heading{display:flex;gap:20px;align-items:center}.update-heading .app-icon{margin:0;flex:none}.update-heading h2{margin:0;font-size:1.4rem;letter-spacing:-.03em}#update-badge{color:var(--lime);font-size:.65rem}#update-notes{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:.9rem;color:var(--muted)}#update-notes-box{border-top:1px solid var(--line);padding-top:20px}#update-notes-box summary{cursor:pointer;color:var(--lime)}

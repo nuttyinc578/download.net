@@ -1,6 +1,6 @@
 {
   "name": "download-net-launcher",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Nuttyinc's community app and game store for Windows",
   "author": "Nuttyinc",
   "license": "MIT",
@@ -69,10 +69,22 @@
         "from": "web",
         "to": "web"
       }
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "nuttyinc578",
+        "repo": "download.net",
+        "private": false,
+        "releaseType": "release"
+      }
     ]
   },
   "bin": {
     "vnedfordownloaddotnet": "scripts/vfdn.mjs",
     "vfdn": "scripts/vfdn.mjs"
+  },
+  "dependencies": {
+    "electron-updater": "6.8.9"
   }
 }

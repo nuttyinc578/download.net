@@ -25,6 +25,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - run: npm ci --ignore-scripts
       - run: node scripts/build-web.mjs
       - run: dotnet build services/Api/Api.csproj -c Release
       - run: dotnet build services/AppHost/AppHost.csproj -c Release

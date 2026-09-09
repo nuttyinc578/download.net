@@ -1,5 +1,9 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('nutty', {
+  updateState: () => ipcRenderer.invoke('updates:get'),
+  checkUpdates: () => ipcRenderer.invoke('updates:check'),
+  installUpdate: () => ipcRenderer.invoke('updates:install'),
+  onUpdate: callback => {const listener=(_event,state)=>callback(state);ipcRenderer.on('updates:state',listener);return ()=>ipcRenderer.removeListener('updates:state',listener);},
   settings: () => ipcRenderer.invoke('settings:get'),
   chooseInstallFolder: () => ipcRenderer.invoke('settings:choose-folder'),
   api: (route,body) => ipcRenderer.invoke('api',route,body),

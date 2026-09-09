@@ -39,12 +39,21 @@ jobs:
       - name: Verify the installer contains this source
         shell: pwsh
         run: ./scripts/verify-installer.ps1
+      - name: Verify release update metadata
+        run: node scripts/verify-update-artifacts.cjs
+      - name: Exercise the Electron update downloader
+        shell: pwsh
+        run: |
+          $env:ELECTRON_RUN_AS_NODE=$null
+          $check=Start-Process -FilePath (Resolve-Path node_modules/electron/dist/electron.exe).Path -ArgumentList 'scripts/verify-updater.cjs' -WorkingDirectory $PWD.Path -WindowStyle Hidden -Wait -PassThru
+          Get-Content artifacts/updater-smoke-result.json
+          if ($check.ExitCode -ne 0) { throw 'Electron updater smoke test failed.' }
       - name: Bundle the complete launcher folder
         shell: pwsh
         run: |
           Add-Type -AssemblyName System.IO.Compression.FileSystem
           [System.IO.Compression.ZipFile]::CreateFromDirectory((Resolve-Path artifacts/win-unpacked).Path, (Join-Path $PWD 'artifacts/download.net-launcher-v1-folder.zip'))
-          Get-ChildItem artifacts/download.net-Setup-*.exe, artifacts/*-folder.zip | ForEach-Object { "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name } | Set-Content artifacts/SHA256SUMS.txt
+          Get-ChildItem artifacts/download.net-Setup-*.exe, artifacts/*-folder.zip, artifacts/latest.yml, artifacts/*.blockmap | ForEach-Object { "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name } | Set-Content artifacts/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
           name: download.net-launcher-v1
@@ -52,6 +61,8 @@ jobs:
             artifacts/download.net-Setup-*.exe
             artifacts/*-folder.zip
             artifacts/SHA256SUMS.txt
+            artifacts/latest.yml
+            artifacts/*.blockmap
           if-no-files-found: error
           retention-days: 30
   release:
@@ -71,4 +82,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          gh release create "$RELEASE_TAG" artifacts/download.net-Setup-*.exe artifacts/*-folder.zip artifacts/SHA256SUMS.txt --title "download.net launcher $RELEASE_TAG" --notes-file "docs/RELEASE-$RELEASE_TAG.md" --verify-tag --latest
+          gh release create "$RELEASE_TAG" artifacts/download.net-Setup-*.exe artifacts/*-folder.zip artifacts/SHA256SUMS.txt artifacts/latest.yml artifacts/*.blockmap --title "download.net launcher $RELEASE_TAG" --notes-file "docs/RELEASE-$RELEASE_TAG.md" --verify-tag --latest

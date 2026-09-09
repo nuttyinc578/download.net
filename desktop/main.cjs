@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog, shell, net, session } = require('el
 const { join } = require('node:path');
 const fs = require('node:fs/promises');
 const { pathToFileURL } = require('node:url');
-let window, settings, active, selected, lastDownload, publishing=false, backend, backendError, quitting=false;
+let window, settings, active, selected, lastDownload, publishing=false, backend, backendError, quitting=false,updates;
 const hasLock=app.requestSingleInstanceLock();
 if(!hasLock)app.quit();
 app.on('second-instance',()=>{if(window){if(window.isMinimized())window.restore();window.focus();}});
@@ -17,7 +17,7 @@ async function main() {
   settings={installRoot:defaultInstallRoot};
   try { const saved=JSON.parse(await fs.readFile(configFile,'utf8')); if(typeof saved.installRoot==='string')settings.installRoot=saved.installRoot; } catch { /* Keep default Programs folder. */ }
   const {startLocalBackend}=await import('./local-backend.mjs');
-  const connectionReady=startLocalBackend({
+  function launchBackend(){backendError=null;return startLocalBackend({
     runtimeDir:app.isPackaged?join(process.resourcesPath,'runtime'):join(__dirname,'../artifacts/runtime'),
     dataDir:join(app.getPath('userData'),'backend'),
     onExit:message=>{backendError=message;if(window&&!window.isDestroyed())window.webContents.send('connection-error',message);}
@@ -25,7 +25,8 @@ async function main() {
     backend=value;
     if(quitting){await backend.stop();return;}
     settings.apiUrl=value.apiUrl;settings.bootstrapUrl=value.bootstrapUrl;
-  }).catch(error=>{backendError=error.message;});
+  }).catch(error=>{backendError=error.message;});}
+  let connectionReady=launchBackend();
   async function connected(){await connectionReady;if(backendError||!backend)throw Error(backendError||'Nuttyinc is still starting. Please try again.');}
   const documentUrl=pathToFileURL(join(__dirname,'../web/store.html')).href;
   window=new BrowserWindow({width:1320,height:860,minWidth:760,minHeight:600,backgroundColor:'#10120f',title:'download.net',autoHideMenuBar:true,webPreferences:{preload:join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
@@ -34,7 +35,7 @@ async function main() {
   session.defaultSession.setPermissionRequestHandler((_wc,_permission,callback)=>callback(false));
   function handle(name,fn) { ipcMain.handle(name,async(event,...args)=>{
     if(event.sender!==window.webContents || event.senderFrame!==window.webContents.mainFrame || event.senderFrame.url.split('#')[0]!==documentUrl) throw Error('Untrusted caller.');
-    try { return await fn(...args); } catch(e) { throw Error(['EACCES','EPERM'].includes(e.code)?'Windows cannot write to this folder. Choose a writable Programs folder in Settings.':e.message); }
+    try { if(quitting)throw Error('download.net is closing to update.');return await fn(...args); } catch(e) { throw Error(['EACCES','EPERM'].includes(e.code)?'Windows cannot write to this folder. Choose a writable Programs folder in Settings.':e.message); }
   }); }
   const progress=(value)=>{if(!window.isDestroyed()) window.webContents.send('progress',value);};
   async function request(origin,path,body,useSession=true) {
@@ -44,6 +45,22 @@ async function main() {
     if(!response.ok) throw Error(json.error||`Server returned ${response.status}.`);
     return json;
   }
+  const {LauncherUpdates}=await import('./updates.mjs');
+  let updateEngine=null,updateMode='development';
+  if(app.isPackaged&&process.platform==='win32'){
+    const {autoUpdater}=require('electron-updater');updateEngine=autoUpdater;
+    updateMode=await fs.access(join(require('node:path').dirname(app.getPath('exe')),'Uninstall download.net.exe')).then(()=>'installed',()=>'portable');
+    autoUpdater.setFeedURL({provider:'github',owner:'nuttyinc578',repo:'download.net',private:false});
+  }
+  updates=new LauncherUpdates({engine:updateEngine,version:app.getVersion(),mode:updateMode,
+    emit:state=>{if(!window.isDestroyed())window.webContents.send('updates:state',state);},
+    canInstall:()=>!active&&!publishing&&!quitting,
+    beforeInstall:async()=>{quitting=true;await connectionReady;await backend?.stop();backend=null;},
+    installFailed:async()=>{quitting=false;connectionReady=launchBackend();await connectionReady;}
+  });
+  handle('updates:get',()=>updates.snapshot());
+  handle('updates:check',()=>updates.check());
+  handle('updates:install',()=>updates.install());
   handle('settings:get',async()=>{await connectionReady;return {installRoot:settings.installRoot,version:app.getVersion(),connected:!!backend&&!backendError,connectionError:backendError||null};});
   handle('settings:choose-folder',async()=>{
     if(active||publishing)throw Error('Wait until the current transfer finishes.');
@@ -104,7 +121,10 @@ async function main() {
     await shell.openExternal(u.href);
   });
   await window.loadURL(documentUrl);
+  updates.start();
 }
 if(hasLock)app.whenReady().then(main).catch(error=>{dialog.showErrorBox('download.net could not start',error.message);app.quit();});
 app.on('before-quit',event=>{if(backend&&!quitting){event.preventDefault();quitting=true;active?.abort();backend.stop().finally(()=>app.quit());}else{quitting=true;}});
 app.on('window-all-closed',()=>{active?.abort();app.quit();});
+
+app.on('will-quit',()=>updates?.stop());

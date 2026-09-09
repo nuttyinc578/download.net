@@ -6,6 +6,12 @@ A Windows app and game store by Nuttyinc. Built with Electron, Node.js, Go, C#, 
 
 The v1.0.2 installer and portable folder include the current launcher and a Nuttyinc backend that starts automatically on this PC. No manual connection setup or separate developer SDKs are needed. Nightly builds are also produced by GitHub Actions; if nightly.link is unavailable, use the permanent release downloads. The catalog includes verified, maintainer-approved submissions, and accounts are local to this PC.
 
+## Launcher updates
+
+Starting with 1.0.3, open **Updates** in the sidebar to see the installed and latest launcher versions, progress, and release notes. Windows setup installations check at startup and every six hours, automatically download new stable releases, and install verified updates when the launcher closes. **Restart and update** stops the bundled backend and restarts through the installer; finish active app downloads or publishing first.
+
+Install version 1.0.3 or later once to enable this feature. Older versions cannot update themselves. Portable folders receive release notices and a setup link; automatic installation requires the Windows setup edition. Update downloads are separate from the .vfdn app catalog. Accounts and installed apps are preserved.
+
 ## Run locally
 
 Install Node.js 22+, .NET SDK 8, Go 1.23+, and a JDK 17+ (Java is used for submission inspection).
