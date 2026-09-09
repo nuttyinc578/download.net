@@ -2,9 +2,9 @@
 
 A Windows app and game store by Nuttyinc. Built with Electron, Node.js, Go, C#, .NET Aspire, Java, and Vned.
 
-[Website](https://nuttyinc578.github.io/download.net/) · [Download installer v1.0.2](https://github.com/nuttyinc578/download.net/releases/download/v1.0.2/download.net-Setup-1.0.2.exe) · [Portable folder](https://github.com/nuttyinc578/download.net/releases/download/v1.0.2/download.net-launcher-v1-folder.zip) · [Nightly download](https://nightly.link/nuttyinc578/download.net/workflows/nightly.yml/main/download.net-launcher-v1.zip) · [MIT license](LICENSE) · [Code of conduct](CODE_OF_CONDUCT.md) · [Contributing](CONTRIBUTING.md)
+[Website](https://nuttyinc578.github.io/download.net/) · [Download installer v1.0.3](https://github.com/nuttyinc578/download.net/releases/download/v1.0.3/download.net-Setup-1.0.3.exe) · [Portable folder](https://github.com/nuttyinc578/download.net/releases/download/v1.0.3/download.net-launcher-v1-folder.zip) · [Nightly download](https://nightly.link/nuttyinc578/download.net/workflows/nightly.yml/main/download.net-launcher-v1.zip) · [MIT license](LICENSE) · [Code of conduct](CODE_OF_CONDUCT.md) · [Contributing](CONTRIBUTING.md)
 
-The v1.0.2 installer and portable folder include the current launcher and a Nuttyinc backend that starts automatically on this PC. No manual connection setup or separate developer SDKs are needed. Nightly builds are also produced by GitHub Actions; if nightly.link is unavailable, use the permanent release downloads. The catalog includes verified, maintainer-approved submissions, and accounts are local to this PC.
+The v1.0.3 installer and portable folder include the current launcher and a Nuttyinc backend that starts automatically on this PC. No manual connection setup or separate developer SDKs are needed. Nightly builds are also produced by GitHub Actions; if nightly.link is unavailable, use the permanent release downloads. The catalog includes verified, maintainer-approved submissions, and accounts are local to this PC.
 
 ## Launcher updates
 
