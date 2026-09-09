@@ -42,6 +42,7 @@ jobs:
       - name: Verify release update metadata
         run: node scripts/verify-update-artifacts.cjs
       - name: Exercise the Electron update downloader
+        timeout-minutes: 5
         shell: pwsh
         run: |
           $env:ELECTRON_RUN_AS_NODE=$null

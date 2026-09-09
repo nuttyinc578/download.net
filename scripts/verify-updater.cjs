@@ -1,8 +1,7 @@
 const {app}=require('electron');
 // Load the installed dependency tree from the built app, including all transitives.
 const updaterPackage=require('node:path').resolve('artifacts/win-unpacked/resources/app.asar/node_modules/electron-updater');
-const {NsisUpdater}=require(updaterPackage);
-const {ElectronHttpExecutor}=require(updaterPackage+'/out/electronHttpExecutor');
+let NsisUpdater,ElectronHttpExecutor;
 const fs=require('node:fs');const fsp=require('node:fs/promises');const path=require('node:path');const os=require('node:os');const http=require('node:http');const assert=require('node:assert/strict');const {createHash}=require('node:crypto');const yaml=require('js-yaml');
 const pkg=require('../package.json');const live=process.argv.includes('--live');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'nutty-updater-'));app.setPath('userData',root);app.disableHardwareAcceleration();
@@ -18,6 +17,7 @@ function updater(url,suffix){
  engine.quitAndInstall=()=>{throw Error('Tests must never start setup.');};return engine;
 }
 app.whenReady().then(async()=>{
+ ({NsisUpdater}=require(updaterPackage));({ElectronHttpExecutor}=require(updaterPackage+'/out/electronHttpExecutor'));
  let base;
  if(!live){
   const metadata=fs.readFileSync('artifacts/latest.yml');const parsed=yaml.load(metadata.toString());const name=parsed.files[0].url;
@@ -39,5 +39,6 @@ app.whenReady().then(async()=>{
 }).catch(async error=>{await fsp.writeFile(report,JSON.stringify({passed:false,error:error.stack}));process.exitCode=1;}).finally(async()=>{
  if(server){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
  assert.equal(path.dirname(root),path.resolve(os.tmpdir()));assert.ok(path.basename(root).startsWith('nutty-updater-'));
- await fsp.rm(root,{recursive:true,force:true});app.exit(process.exitCode||0);
+ // Chromium may keep userData files locked until exit on Windows. Cleanup must not hang the test.
+ try{await fsp.rm(root,{recursive:true,force:true});}catch(error){console.warn('Temporary profile cleanup deferred:',error.code);}finally{app.exit(process.exitCode||0);}
 });
