@@ -1,6 +1,8 @@
 const {app}=require('electron');
-const {NsisUpdater}=require('electron-updater');
-const {ElectronHttpExecutor}=require('electron-updater/out/electronHttpExecutor');
+// Load the installed dependency tree from the built app, including all transitives.
+const updaterPackage=require('node:path').resolve('artifacts/win-unpacked/resources/app.asar/node_modules/electron-updater');
+const {NsisUpdater}=require(updaterPackage);
+const {ElectronHttpExecutor}=require(updaterPackage+'/out/electronHttpExecutor');
 const fs=require('node:fs');const fsp=require('node:fs/promises');const path=require('node:path');const os=require('node:os');const http=require('node:http');const assert=require('node:assert/strict');const {createHash}=require('node:crypto');const yaml=require('js-yaml');
 const pkg=require('../package.json');const live=process.argv.includes('--live');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'nutty-updater-'));app.setPath('userData',root);app.disableHardwareAcceleration();
