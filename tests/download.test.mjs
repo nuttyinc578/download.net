@@ -18,3 +18,22 @@ test('redirects cannot reach local or unrelated hosts',async()=>{let calls=0;awa
 test('GitHub asset redirects are supported',async()=>{let calls=0;const r=await assetResponse(manifest.url,undefined,async()=>++calls===1?new Response(null,{status:302,headers:{location:'https://release-assets.githubusercontent.com/signed.exe?token=temporary'}}):new Response(payload));assert.equal(calls,2);assert.deepEqual(Buffer.from(await r.arrayBuffer()),payload);});
 test('PE inspection validates headers and computes actual hash',async t=>{const dir=await directory(t);const file=join(dir,'fixture.exe');await writeFile(file,payload);assert.deepEqual(await inspectExe(file),{size:manifest.size,sha256:manifest.sha256});});
 test('PE inspection rejects renamed text and bad offsets',async t=>{const dir=await directory(t);const file=join(dir,'fixture.exe');await writeFile(file,Buffer.alloc(256));await assert.rejects(inspectExe(file),/header/);const broken=Buffer.from(payload);broken.writeUInt32LE(99999,60);await writeFile(file,broken);await assert.rejects(inspectExe(file),/offset/);});
+
+test('an aborted download cannot reuse a verified cache',async t=>{
+ const dir=await directory(t),fetcher=async()=>new Response(payload);await downloadVerified(manifest,dir,{fetcher});
+ const control=new AbortController();control.abort();await assert.rejects(downloadVerified(manifest,dir,{signal:control.signal,fetcher:()=>{throw Error('must not fetch');}}),/cancelled/);
+});
+test('cancelling on the final chunk cannot commit the cache',async t=>{
+ const dir=await directory(t),control=new AbortController();await assert.rejects(downloadVerified(manifest,dir,{signal:control.signal,fetcher:async()=>new Response(payload),progress:p=>{if(p.stage==='downloading')control.abort();}}),/cancelled/);assert.deepEqual(await readdir(dir),[]);
+});
+test('a failed response stream closes and removes only its own partial file',async t=>{
+ const dir=await directory(t);await writeFile(join(dir,'unrelated.part'),'keep');
+ const body=new ReadableStream({start(controller){controller.error(Error('connection lost'));}});
+ await assert.rejects(downloadVerified(manifest,dir,{fetcher:async()=>new Response(body)}),/connection lost/);assert.deepEqual(await readdir(dir),['unrelated.part']);
+});
+test('concurrent downloads use independent temporary files',async t=>{
+ const dir=await directory(t);let count=0,release;const ready=new Promise(resolve=>release=resolve);
+ const fetcher=async()=>{if(++count===2)release();await ready;return new Response(payload);};
+ const paths=await Promise.all([downloadVerified(manifest,dir,{fetcher}),downloadVerified(manifest,dir,{fetcher})]);
+ assert.equal(paths[0],paths[1]);assert.deepEqual(await readFile(paths[0]),payload);assert.equal((await readdir(dir)).length,1);
+});

@@ -1,8 +1,9 @@
+import {cleanupOwnedPath} from '../shared/fs-operations.mjs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {buildPackage} from '../shared/folder-package.mjs';
 import { createReadStream } from 'node:fs';
-import { open, stat, mkdtemp, rm } from 'node:fs/promises';
+import { open, stat, mkdtemp } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { sha256 } from './download.mjs';
 import { validateManifest, MAX_SIZE } from '../shared/manifest.mjs';
@@ -80,5 +81,5 @@ export async function publishApp(source, fields, token, progress = ()=>{}) {
   } catch (e) {
     if (assetCreated) throw Error(`${e.message} Your uploaded release remains at ${publishedUrl}; you can remove it from GitHub if you cancel.`);
     throw e;
-  } finally { token = ''; if(temporary)await rm(temporary,{recursive:true,force:true}); }
+  } finally { token = ''; if(temporary)await cleanupOwnedPath(temporary,{recursive:true}); }
 }

@@ -22,6 +22,7 @@ assert.ok(extract('node_modules/electron-updater/out/main.js').length>0);
 const ui = extract('web/store.html').toString();
 assert.ok(!ui.includes('Save connection'));
 assert.ok(ui.includes('Choose folder'));
+assert.ok(ui.includes('id="reset-install-folder"'));assert.ok(ui.includes('id="download-settings"'));
 assert.ok(ui.includes('id="updates-view"'));assert.ok(ui.includes('id="install-update"'));
 assert.ok(ui.includes('signup-conduct-accepted'));
 assert.ok(ui.includes('Contributor Covenant 2.1'));

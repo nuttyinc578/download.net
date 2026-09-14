@@ -29,7 +29,7 @@ jobs:
       - run: node scripts/build-web.mjs
       - run: dotnet build services/Api/Api.csproj -c Release
       - run: dotnet build services/AppHost/AppHost.csproj -c Release
-      - run: node --test tests/*.test.mjs
+      - run: npm test
       - run: go test ./...
         working-directory: services/bootstrap
       - run: javac --release 17 -d services/inspector/build services/inspector/ExeInspector.java

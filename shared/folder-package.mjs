@@ -1,7 +1,8 @@
-import {open, lstat, readdir, mkdir, mkdtemp, rm, rename, realpath} from 'node:fs/promises';
+import {open, lstat, readdir, mkdir, mkdtemp, rename, realpath} from 'node:fs/promises';
 import {createHash, randomUUID} from 'node:crypto';
 import {resolve, join, dirname, relative, isAbsolute, parse} from 'node:path';
 import {MAX_SIZE} from './manifest.mjs';
+import {retryFileOperation,cleanupOwnedPath} from './fs-operations.mjs';
 
 const MAGIC = Buffer.from('VFDNPK1\n');
 const MAX_HEADER = 8 * 1024 ** 2, MAX_ENTRIES = 20000;
@@ -20,8 +21,13 @@ export async function safeDirectory(path, create=false) {
   let current=root;
   for (const part of relative(root,path).split(/[\\/]/).filter(Boolean)) {
     current=join(current,part);
-    if (create) await mkdir(current).catch(e=>{if(e.code!=='EEXIST')throw e;});
-    const info=await lstat(current);
+    let info;
+    try {info=await lstat(current);}
+    catch(error) {
+      if(!create||error.code!=='ENOENT')throw error;
+      await mkdir(current).catch(e=>{if(e.code!=='EEXIST')throw e;});
+      info=await lstat(current);
+    }
     if (info.isSymbolicLink() || !info.isDirectory()) throw Error('Installation/source folders cannot contain links: '+current);
   }
   return path;
@@ -110,9 +116,9 @@ export async function buildPackage(source,output,{signal,progress=()=>{}}={}) {
       if(bytes!==file.size||fileDigest.digest('hex')!==file.sha256)throw Error('Source changed during build: '+file.path);
     }
     await out.sync();await out.close();out=null;
-    await rename(temp,output);
+    await retryFileOperation(()=>rename(temp,output),{signal});
     return {path:output,size:12+header.length+scan.totalSize,sha256:hash.digest('hex'),fileCount:scan.fileCount,totalSize:scan.totalSize};
-  } finally {await out?.close();await rm(temp,{force:true});}
+  } finally {await out?.close().catch(()=>{});await cleanupOwnedPath(temp);}
 }
 async function readInventory(handle) {
   const size=(await handle.stat()).size;if(size>MAX_SIZE||size<12)throw Error('Invalid package size.');
@@ -169,17 +175,17 @@ export async function installPackage(file,root,{id,expectedSha256,signal,progres
     }
     cancelled(signal);progress({stage:'complete',cached:true});return {path:target,fileCount:data.fileCount,cached:true};
   }
-  const staging=await mkdtemp(join(root,'.vfdn-'));
+  const staging=await mkdtemp(join(root,'.vfdn-'));let committed=false;
   try {
     const data=await unpack(file,staging,{signal,expectedSha256,progress});
     cancelled(signal);
     try{await lstat(target);throw Error('Installation folder appeared during download. Try again.');}catch(e){if(e.code!=='ENOENT')throw e;}
-    await rename(staging,target);
+    await retryFileOperation(()=>rename(staging,target),{signal});committed=true;
     progress({stage:'complete',bytes:data.totalSize,total:data.totalSize});
     return {path:target,fileCount:data.fileCount,cached:false};
   } finally {
     if(!inside(root,staging)||!parse(staging).base.startsWith('.vfdn-'))throw Error('Refusing to remove an unexpected staging path.');
-    await rm(staging,{recursive:true,force:true});
+    if(!committed)await cleanupOwnedPath(staging,{recursive:true,onWarning:message=>progress({stage:'cleanup-warning',message})});
   }
 }
 
